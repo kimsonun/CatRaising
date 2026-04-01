@@ -60,7 +60,7 @@ namespace CatRaising.Interactables
 
         private void HandleInput()
         {
-            if (Input.GetMouseButtonDown(0))
+            if (TouchInput.WasPressedThisFrame)
             {
                 if (IsTouchingBowl() && IsEmpty)
                 {
@@ -71,10 +71,7 @@ namespace CatRaising.Interactables
 
         private bool IsTouchingBowl()
         {
-            if (_mainCamera == null) return false;
-            Vector2 worldPos = _mainCamera.ScreenToWorldPoint(Input.mousePosition);
-            Collider2D hit = Physics2D.OverlapPoint(worldPos);
-            return hit != null && hit.gameObject == gameObject;
+            return TouchInput.IsOverGameObject(gameObject);
         }
 
         public void FillBowl()

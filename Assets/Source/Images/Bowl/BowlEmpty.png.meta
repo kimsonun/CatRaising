@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 60b15997df072d84584dd806c392c31b
+guid: affb186963bd19f408871157a9ab9d02
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -493701553385848175
-    second: pixel-art-bedroom-isometric-projection-interior-design-services-house-c6c94aa0e9768a4eec6a620eb60343a7_0
+      213: -2981645801250240592
+    second: dreamina-2026-04-01-9364-create for me 4 pictures, all with pixel...-Photoroom_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -109,17 +109,30 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: pixel-art-bedroom-isometric-projection-interior-design-services-house-c6c94aa0e9768a4eec6a620eb60343a7_0
+      name: dreamina-2026-04-01-9364-create for me 4 pictures, all with pixel...-Photoroom_0
       rect:
         serializedVersion: 2
-        x: 67
-        y: 27
-        width: 566
-        height: 545
+        x: 0
+        y: 0
+        width: 1280
+        height: 1280
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +141,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 192c06d8d050629f0800000000000000
-      internalID: -493701553385848175
+      spriteID: 0b7c172f0f01f96d0800000000000000
+      internalID: -2981645801250240592
       vertices: []
       indices: 
       edges: []
@@ -148,7 +161,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      pixel-art-bedroom-isometric-projection-interior-design-services-house-c6c94aa0e9768a4eec6a620eb60343a7_0: -493701553385848175
+      dreamina-2026-04-01-9364-create for me 4 pictures, all with pixel...-Photoroom_0: -2981645801250240592
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

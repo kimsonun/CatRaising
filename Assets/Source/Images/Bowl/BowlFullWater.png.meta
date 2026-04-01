@@ -1,10 +1,11 @@
 fileFormatVersion: 2
-guid: affb186963bd19f408871157a9ab9d02
+guid: 3464057c5f08ea1418fcc26e5b580285
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -2981645801250240592
-    second: dreamina-2026-04-01-9364-create for me 4 pictures, all with pixel...-Photoroom_0
+      213: 304348824793721798
+    second: dreamina-2026-04-01-9044-create for me 4 pictures, all with pixel...-Photoroom
+      (1)_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -109,16 +110,30 @@ TextureImporter:
     ignorePlatformSupport: 0
     androidETC2FallbackOverride: 0
     forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: dreamina-2026-04-01-9364-create for me 4 pictures, all with pixel...-Photoroom_0
+      name: dreamina-2026-04-01-9044-create for me 4 pictures, all with pixel...-Photoroom
+        (1)_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 1280
+        width: 1096
         height: 1280
       alignment: 0
       pivot: {x: 0, y: 0}
@@ -128,8 +143,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 0b7c172f0f01f96d0800000000000000
-      internalID: -2981645801250240592
+      spriteID: 6cb23a5c4a3493400800000000000000
+      internalID: 304348824793721798
       vertices: []
       indices: 
       edges: []
@@ -148,7 +163,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      dreamina-2026-04-01-9364-create for me 4 pictures, all with pixel...-Photoroom_0: -2981645801250240592
+      dreamina-2026-04-01-9044-create for me 4 pictures, all with pixel...-Photoroom (1)_0: 304348824793721798
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -874,7 +874,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
+  m_Offset: {x: 0.12535286, y: 0.37606323}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -884,7 +884,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.0001, y: 0.0001}
+  m_Size: {x: 8.51495, y: 5.142127}
   m_EdgeRadius: 0
 --- !u!212 &415429869
 SpriteRenderer:
@@ -2448,7 +2448,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
+  m_Offset: {x: 0.20284557, y: 0.067615986}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -2458,7 +2458,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.0001, y: 0.0001}
+  m_Size: {x: 7.9785995, y: 6.085388}
   m_EdgeRadius: 0
 --- !u!212 &1581665309
 SpriteRenderer:
@@ -3149,10 +3149,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fcc6ec97f5f68614890aafaad54ceb0e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CatRaising.Cat.CatAnimator
-  _animator: {fileID: 0}
-  _spriteRenderer: {fileID: 0}
+  _animator: {fileID: 1979005308}
+  _spriteRenderer: {fileID: 1979005309}
   idleSprite: {fileID: 21300000, guid: d69d9f8d1fb7c654c8883259344bf090, type: 3}
   sleepSprite: {fileID: 21300000, guid: 83aaea540f839e749b572cf2b63fe452, type: 3}
+  layingDownDuration: 2
+  wakingUpDuration: 2
+  stretchingDuration: 2
   flipSmoothing: 0.1
 --- !u!61 &1979005307
 BoxCollider2D:
@@ -3192,8 +3195,8 @@ BoxCollider2D:
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 5.77, y: 4.33}
-    newSize: {x: 5.77, y: 4.33}
+    oldSize: {x: 6.411111, y: 4.8}
+    newSize: {x: 5.96, y: 2.6204515}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
     adaptiveTiling: 0
@@ -3210,7 +3213,7 @@ Animator:
   m_GameObject: {fileID: 1979005301}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: c93cd0ac18dc7354ebc2162a0540fac4, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -3276,7 +3279,7 @@ SpriteRenderer:
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 5.77, y: 4.33}
+  m_Size: {x: 5.96, y: 2.6204515}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
@@ -3289,13 +3292,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1979005301}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -2, z: 0}
   m_LocalScale: {x: 0.34, y: 0.34, z: 0.34}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

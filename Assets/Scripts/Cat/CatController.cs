@@ -5,6 +5,12 @@ namespace CatRaising.Cat
     /// <summary>
     /// Main cat controller using a Finite State Machine (FSM).
     /// Coordinates between CatAI, CatAnimator, CatNeeds, and CatInteraction.
+    /// 
+    /// Transition states (LayingDown, WakingUp, Stretching) are handled
+    /// automatically — AI/code requests Sleeping or Idle, and the FSM
+    /// routes through the proper transition chain:
+    ///   Idle → LayingDown → Sleeping
+    ///   Sleeping → WakingUp → Stretching → Idle
     /// </summary>
     public class CatController : MonoBehaviour
     {
@@ -13,13 +19,16 @@ namespace CatRaising.Cat
         /// </summary>
         public enum CatState
         {
-            Idle,       // Sitting still, looking around
-            Walking,    // Moving to a destination
-            Sleeping,   // Lying down, zzz
-            BeingPet,   // Player is petting the cat
-            Eating,     // At the food bowl
-            Drinking,   // At the water bowl
-            Playing     // Chasing a toy
+            Idle,           // Standing/sitting still, looking around
+            Walking,        // Moving to a destination
+            LayingDown,     // Transition: standing → lying down (one-shot)
+            Sleeping,       // Lying down with eyes closed, zzz
+            WakingUp,       // Transition: eyes opening, starting to get up (one-shot)
+            Stretching,     // Transition: post-wake stretch (one-shot)
+            BeingPet,       // Player is petting the cat
+            Eating,         // At the food bowl
+            Drinking,       // At the water bowl
+            Playing         // Chasing a toy
         }
 
         [Header("References")]
@@ -35,6 +44,15 @@ namespace CatRaising.Cat
         /// The current FSM state.
         /// </summary>
         public CatState CurrentState => _currentState;
+
+        /// <summary>
+        /// Whether the cat is in a transition animation (LayingDown, WakingUp, Stretching).
+        /// During transitions, AI decisions are paused and most interactions are blocked.
+        /// </summary>
+        public bool IsInTransition =>
+            _currentState == CatState.LayingDown ||
+            _currentState == CatState.WakingUp ||
+            _currentState == CatState.Stretching;
 
         /// <summary>
         /// Public accessor for the animator component.
@@ -59,10 +77,24 @@ namespace CatRaising.Cat
         {
             // Set initial state
             EnterState(_currentState);
+
+            // Listen for transition animation completions from CatAnimator
+            if (_catAnimator != null)
+                _catAnimator.OnTransitionAnimationComplete += OnTransitionComplete;
+        }
+
+        private void OnDestroy()
+        {
+            if (_catAnimator != null)
+                _catAnimator.OnTransitionAnimationComplete -= OnTransitionComplete;
         }
 
         /// <summary>
-        /// Request a state change. The FSM will validate the transition.
+        /// Request a state change. The FSM will validate the transition and
+        /// automatically insert transition states where needed.
+        /// 
+        /// Example: RequestState(Sleeping) while in Idle will actually go:
+        ///   Idle → LayingDown → (wait for anim) → Sleeping
         /// </summary>
         public void RequestState(CatState newState)
         {
@@ -75,13 +107,87 @@ namespace CatRaising.Cat
                 return;
             }
 
+            // Auto-insert transition states
+            CatState actualNextState = ResolveTransitionState(newState);
+
             CatState previousState = _currentState;
             ExitState(_currentState);
-            _currentState = newState;
-            EnterState(newState);
+            _currentState = actualNextState;
+            EnterState(actualNextState);
 
-            OnStateChanged?.Invoke(previousState, newState);
-            Debug.Log($"[CatController] State: {previousState} → {newState}");
+            OnStateChanged?.Invoke(previousState, actualNextState);
+            Debug.Log($"[CatController] State: {previousState} → {actualNextState}" +
+                      (actualNextState != newState ? $" (target: {newState})" : ""));
+        }
+
+        /// <summary>
+        /// Resolve the actual next state, inserting transitions where needed.
+        /// If the AI requests "Sleeping" while Idle, we go to "LayingDown" first.
+        /// If the AI requests "Idle" while Sleeping, we go to "WakingUp" first.
+        /// </summary>
+        private CatState ResolveTransitionState(CatState targetState)
+        {
+            // Going to sleep: insert LayingDown transition
+            if (targetState == CatState.Sleeping &&
+                _currentState != CatState.LayingDown)
+            {
+                return CatState.LayingDown;
+            }
+
+            // Waking up: insert WakingUp transition
+            if (targetState != CatState.Sleeping &&
+                _currentState == CatState.Sleeping)
+            {
+                // Unless being forced by player interaction (pet/play), do wake-up transition
+                if (targetState != CatState.BeingPet && targetState != CatState.Playing)
+                {
+                    return CatState.WakingUp;
+                }
+            }
+
+            // No transition needed
+            return targetState;
+        }
+
+        /// <summary>
+        /// Called by CatAnimator when a transition animation finishes playing.
+        /// Advances the FSM to the next state in the chain.
+        /// </summary>
+        private void OnTransitionComplete(CatState completedState)
+        {
+            Debug.Log($"[CatController] Transition animation complete: {completedState}");
+
+            switch (completedState)
+            {
+                case CatState.LayingDown:
+                    // LayingDown finished → go to Sleeping
+                    AdvanceToState(CatState.Sleeping);
+                    break;
+
+                case CatState.WakingUp:
+                    // WakingUp finished → go to Stretching
+                    AdvanceToState(CatState.Stretching);
+                    break;
+
+                case CatState.Stretching:
+                    // Stretching finished → go to Idle
+                    AdvanceToState(CatState.Idle);
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Advance to the next state in a transition chain (bypasses ResolveTransitionState).
+        /// </summary>
+        private void AdvanceToState(CatState nextState)
+        {
+            CatState previousState = _currentState;
+            ExitState(_currentState);
+            _currentState = nextState;
+            EnterState(nextState);
+
+            OnStateChanged?.Invoke(previousState, nextState);
+            Debug.Log($"[CatController] Advanced: {previousState} → {nextState}");
         }
 
         /// <summary>
@@ -89,9 +195,13 @@ namespace CatRaising.Cat
         /// </summary>
         private bool CanTransitionTo(CatState newState)
         {
-            // Player interaction always takes priority
+            // Player interaction always takes priority (even during transitions)
             if (newState == CatState.BeingPet || newState == CatState.Playing)
                 return true;
+
+            // Block AI decisions during transition animations
+            if (IsInTransition)
+                return false;
 
             // Can't interrupt eating/drinking with AI decisions (let the cat finish)
             if (_currentState == CatState.Eating || _currentState == CatState.Drinking)
@@ -131,12 +241,25 @@ namespace CatRaising.Cat
                     if (_catAI != null) _catAI.SetAIEnabled(true);
                     break;
 
+                case CatState.LayingDown:
+                    // Disable AI during transition
+                    if (_catAI != null) _catAI.SetAIEnabled(false);
+                    break;
+
                 case CatState.Sleeping:
+                    // Re-enable AI so it can decide when to wake up
                     if (_catAI != null) _catAI.SetAIEnabled(true);
                     break;
 
+                case CatState.WakingUp:
+                    if (_catAI != null) _catAI.SetAIEnabled(false);
+                    break;
+
+                case CatState.Stretching:
+                    if (_catAI != null) _catAI.SetAIEnabled(false);
+                    break;
+
                 case CatState.BeingPet:
-                    // Disable AI while being pet
                     if (_catAI != null) _catAI.SetAIEnabled(false);
                     break;
 
@@ -175,7 +298,7 @@ namespace CatRaising.Cat
         }
 
         /// <summary>
-        /// Force the cat into a specific state (bypasses validation).
+        /// Force the cat into a specific state (bypasses validation AND transitions).
         /// Use sparingly — for cutscenes, teleportation, etc.
         /// </summary>
         public void ForceState(CatState state)

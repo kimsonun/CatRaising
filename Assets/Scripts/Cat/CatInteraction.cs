@@ -70,7 +70,7 @@ namespace CatRaising.Cat
         private void HandleTouchInput()
         {
             // Touch start
-            if (Input.GetMouseButtonDown(0))
+            if (TouchInput.WasPressedThisFrame)
             {
                 if (IsTouchingCat())
                 {
@@ -80,7 +80,7 @@ namespace CatRaising.Cat
             }
 
             // Touch held
-            if (Input.GetMouseButton(0) && _isTouching)
+            if (TouchInput.IsPressed && _isTouching)
             {
                 _touchTimer += Time.deltaTime;
 
@@ -92,7 +92,7 @@ namespace CatRaising.Cat
             }
 
             // Touch released
-            if (Input.GetMouseButtonUp(0))
+            if (TouchInput.WasReleasedThisFrame)
             {
                 if (_isTouching && !_isPetting)
                 {
@@ -114,12 +114,7 @@ namespace CatRaising.Cat
         /// </summary>
         private bool IsTouchingCat()
         {
-            if (_mainCamera == null) return false;
-
-            Vector2 worldPos = _mainCamera.ScreenToWorldPoint(Input.mousePosition);
-            Collider2D hit = Physics2D.OverlapPoint(worldPos);
-
-            return hit != null && hit.gameObject == gameObject;
+            return TouchInput.IsOverGameObject(gameObject);
         }
 
         /// <summary>

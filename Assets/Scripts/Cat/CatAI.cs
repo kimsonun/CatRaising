@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using CatRaising.Core;
 
 namespace CatRaising.Cat
@@ -63,8 +63,10 @@ namespace CatRaising.Cat
             if (catController == null) return;
 
             // Don't make AI decisions if the cat is being interacted with
+            // or is in a transition animation
             if (catController.CurrentState == CatController.CatState.BeingPet ||
-                catController.CurrentState == CatController.CatState.Playing)
+                catController.CurrentState == CatController.CatState.Playing ||
+                catController.IsInTransition)
             {
                 return;
             }

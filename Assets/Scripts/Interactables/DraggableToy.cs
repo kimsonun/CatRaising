@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using CatRaising.Cat;
 using CatRaising.Systems;
 using CatRaising.Core;
@@ -73,7 +73,7 @@ namespace CatRaising.Interactables
         /// </summary>
         private void HandleDragInput()
         {
-            if (Input.GetMouseButtonDown(0))
+            if (TouchInput.WasPressedThisFrame)
             {
                 if (IsTouchingToy())
                 {
@@ -81,7 +81,7 @@ namespace CatRaising.Interactables
                 }
             }
 
-            if (Input.GetMouseButtonUp(0) && _isDragging)
+            if (TouchInput.WasReleasedThisFrame && _isDragging)
             {
                 StopDrag();
             }
@@ -92,10 +92,7 @@ namespace CatRaising.Interactables
         /// </summary>
         private bool IsTouchingToy()
         {
-            if (_mainCamera == null) return false;
-            Vector2 worldPos = _mainCamera.ScreenToWorldPoint(Input.mousePosition);
-            Collider2D hit = Physics2D.OverlapPoint(worldPos);
-            return hit != null && hit.gameObject == gameObject;
+            return TouchInput.IsOverGameObject(gameObject);
         }
 
         /// <summary>
@@ -123,11 +120,9 @@ namespace CatRaising.Interactables
         /// </summary>
         private void UpdateDrag()
         {
-            if (_mainCamera == null) return;
-
-            Vector3 mouseWorldPos = _mainCamera.ScreenToWorldPoint(Input.mousePosition);
-            mouseWorldPos.z = dragZOffset;
-            transform.position = mouseWorldPos;
+            Vector3 worldPos = TouchInput.WorldPosition;
+            worldPos.z = dragZOffset;
+            transform.position = worldPos;
 
             _playTimer += Time.deltaTime;
 
