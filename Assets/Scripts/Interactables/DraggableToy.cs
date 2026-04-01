@@ -1,6 +1,7 @@
-using UnityEngine;
+﻿using UnityEngine;
 using CatRaising.Cat;
 using CatRaising.Systems;
+using CatRaising.Core;
 
 namespace CatRaising.Interactables
 {
