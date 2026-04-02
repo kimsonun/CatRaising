@@ -1,0 +1,468 @@
+fileFormatVersion: 2
+guid: ae0587b1033cb2049a9fb06eba2e96df
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -1482474270962250129
+    second: dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._0
+  - first:
+      213: 9164669325429659838
+    second: dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._1
+  - first:
+      213: 579341263144384750
+    second: dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._2
+  - first:
+      213: 7033784111863140055
+    second: dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._3
+  - first:
+      213: -7485585788118754942
+    second: dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._4
+  - first:
+      213: -1301000649523538341
+    second: dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._5
+  - first:
+      213: -1225298224142114749
+    second: dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._6
+  - first:
+      213: 6829771317937088551
+    second: dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._7
+  - first:
+      213: 1769413207723535889
+    second: dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._8
+  - first:
+      213: -6223060385753049787
+    second: dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._9
+  - first:
+      213: -4630807820046335354
+    second: dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._10
+  - first:
+      213: -1705785342923330485
+    second: dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._11
+  - first:
+      213: -3670800685467849816
+    second: dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._12
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._0
+      rect:
+        serializedVersion: 2
+        x: 379
+        y: 945
+        width: 141
+        height: 127
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f6e83aa41813d6be0800000000000000
+      internalID: -1482474270962250129
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._1
+      rect:
+        serializedVersion: 2
+        x: 769
+        y: 988
+        width: 82
+        height: 84
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: eb8572ae1327f2f70800000000000000
+      internalID: 9164669325429659838
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._2
+      rect:
+        serializedVersion: 2
+        x: 872
+        y: 907
+        width: 166
+        height: 155
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ee872713fcb3a0800800000000000000
+      internalID: 579341263144384750
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._3
+      rect:
+        serializedVersion: 2
+        x: 221
+        y: 794
+        width: 142
+        height: 134
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7de836612650d9160800000000000000
+      internalID: 7033784111863140055
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._4
+      rect:
+        serializedVersion: 2
+        x: 221
+        y: 322
+        width: 839
+        height: 595
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2891873d26bdd1890800000000000000
+      internalID: -7485585788118754942
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._5
+      rect:
+        serializedVersion: 2
+        x: 1008
+        y: 822
+        width: 93
+        height: 105
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b56d8906dcae1fde0800000000000000
+      internalID: -1301000649523538341
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._6
+      rect:
+        serializedVersion: 2
+        x: 164
+        y: 721
+        width: 56
+        height: 52
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 340a71ec1cddefee0800000000000000
+      internalID: -1225298224142114749
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._7
+      rect:
+        serializedVersion: 2
+        x: 154
+        y: 350
+        width: 91
+        height: 92
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 728aac6f3d838ce50800000000000000
+      internalID: 6829771317937088551
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._8
+      rect:
+        serializedVersion: 2
+        x: 1025
+        y: 414
+        width: 94
+        height: 83
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 11eee3b00f73e8810800000000000000
+      internalID: 1769413207723535889
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._9
+      rect:
+        serializedVersion: 2
+        x: 221
+        y: 237
+        width: 140
+        height: 130
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5455263ec8f33a9a0800000000000000
+      internalID: -6223060385753049787
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._10
+      rect:
+        serializedVersion: 2
+        x: 379
+        y: 209
+        width: 64
+        height: 59
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 682890f92d01cbfb0800000000000000
+      internalID: -4630807820046335354
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._11
+      rect:
+        serializedVersion: 2
+        x: 731
+        y: 265
+        width: 57
+        height: 53
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b4cacfba445d358e0800000000000000
+      internalID: -1705785342923330485
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._12
+      rect:
+        serializedVersion: 2
+        x: 839
+        y: 226
+        width: 200
+        height: 185
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8abad6da932be0dc0800000000000000
+      internalID: -3670800685467849816
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._0: -1482474270962250129
+      dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._1: 9164669325429659838
+      dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._10: -4630807820046335354
+      dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._11: -1705785342923330485
+      dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._12: -3670800685467849816
+      dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._2: 579341263144384750
+      dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._3: 7033784111863140055
+      dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._4: -7485585788118754942
+      dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._5: -1301000649523538341
+      dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._6: -1225298224142114749
+      dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._7: 6829771317937088551
+      dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._8: 1769413207723535889
+      dreamina-2026-04-02-3884-Pixel art icon representing cleanliness,..._9: -6223060385753049787
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

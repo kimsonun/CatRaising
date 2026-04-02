@@ -1,6 +1,7 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using CatRaising.Cat;
 
 namespace CatRaising.UI
 {
@@ -10,6 +11,8 @@ namespace CatRaising.UI
     /// </summary>
     public class NeedBarUI : MonoBehaviour
     {
+        [SerializeField] private NeedType needType;
+
         [Header("UI References")]
         [SerializeField] private Image fillImage;
         [SerializeField] private Image iconImage;
@@ -30,13 +33,35 @@ namespace CatRaising.UI
         [SerializeField] private float pulseMinAlpha = 0.6f;
 
         private float _targetFill = 1f;
-        private float _currentFill = 1f;
-        private bool _isLow = false;
+        public float _currentFill = 1f;
+        public bool _isLow = false;
+        private CatNeeds _catNeeds;
+
+        private void Start()
+        {
+            _catNeeds = FindAnyObjectByType<CatNeeds>();
+        }
 
         private void Update()
         {
             // Smooth fill transition
             _currentFill = Mathf.Lerp(_currentFill, _targetFill, smoothSpeed * Time.deltaTime);
+            
+            switch (needType)
+            {
+                case NeedType.Hunger:
+                    _targetFill = _catNeeds.Hunger / 100f;
+                    break;
+                case NeedType.Thirst:
+                    _targetFill = _catNeeds.Thirst / 100f;
+                    break;
+                case NeedType.Happiness:
+                    _targetFill = _catNeeds.Happiness / 100f;
+                    break;
+                case NeedType.Cleanliness:
+                    _targetFill = _catNeeds.Cleanliness / 100f;
+                    break;
+            }
 
             if (fillImage != null)
             {

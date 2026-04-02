@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using CatRaising.Data;
 
 namespace CatRaising.Cat
@@ -62,13 +62,6 @@ namespace CatRaising.Cat
             }
         }
 
-        public enum NeedType
-        {
-            Hunger,
-            Thirst,
-            Happiness,
-            Cleanliness
-        }
 
         private void Update()
         {
