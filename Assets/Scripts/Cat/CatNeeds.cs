@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using CatRaising.Data;
 
 namespace CatRaising.Cat
@@ -116,6 +116,27 @@ namespace CatRaising.Cat
         {
             _cleanliness = Mathf.Min(100f, _cleanliness + amount);
         }
+
+        /// <summary>
+        /// Decrease hunger (from playing, running around).
+        /// </summary>
+        public void DecreaseHunger(float amount)
+        {
+            _hunger = Mathf.Max(hungerFloor, _hunger - amount);
+        }
+
+        /// <summary>
+        /// Decrease cleanliness (from playing, rolling around).
+        /// </summary>
+        public void DecreaseCleanliness(float amount)
+        {
+            _cleanliness = Mathf.Max(cleanlinessFloor, _cleanliness - amount);
+        }
+
+        /// <summary>
+        /// Check if cleanliness is low (used by grooming AI).
+        /// </summary>
+        public bool IsDirty => _cleanliness < 70f;
 
         /// <summary>
         /// Check if a particular need is low (below threshold).

@@ -6,8 +6,16 @@ using CatRaising.Core;
 namespace CatRaising.Interactables
 {
     /// <summary>
-    /// Draggable toy (like a feather wand) that the player drags around
-    /// for the cat to chase. Increases happiness and bond.
+    /// Feather toy that the player drags around for the cat to chase.
+    /// Only active when ToolModeManager is in FeatherToy mode.
+    /// 
+    /// In FeatherToy mode: any touch on empty space (not on cat/bowls) activates
+    /// the feather at the touch position. The cat chases it.
+    /// 
+    /// Effects while playing:
+    /// - Happiness increases
+    /// - Hunger decreases (playing burns energy)
+    /// - Cleanliness decreases (rolling around)
     /// </summary>
     [RequireComponent(typeof(Collider2D))]
     public class DraggableToy : MonoBehaviour
@@ -18,8 +26,8 @@ namespace CatRaising.Interactables
         [SerializeField] private CatNeeds catNeeds;
 
         [Header("Drag Settings")]
-        [SerializeField] private float dragZOffset = -1f; // Keep in front of background
-        [SerializeField] private float returnSpeed = 3f;  // Speed to return to rest position
+        [SerializeField] private float dragZOffset = -1f;
+        [SerializeField] private float returnSpeed = 3f;
 
         [Header("Cat Chase Settings")]
         [Tooltip("How close the cat chases toward the toy")]
@@ -32,6 +40,12 @@ namespace CatRaising.Interactables
         [Tooltip("Minimum drag time to count as a play session")]
         [SerializeField] private float minPlayTime = 2f;
 
+        [Header("Need Drain While Playing")]
+        [Tooltip("Hunger lost per second while playing")]
+        [SerializeField] private float hungerDrainPerSecond = 1f;
+        [Tooltip("Cleanliness lost per second while playing")]
+        [SerializeField] private float cleanlinessDrainPerSecond = 0.5f;
+
         [Header("Effects")]
         [SerializeField] private TrailRenderer trailRenderer;
         [SerializeField] private GameObject pounceEffectPrefab;
@@ -39,44 +53,76 @@ namespace CatRaising.Interactables
         // State
         private bool _isDragging = false;
         private Vector3 _restPosition;
-        private Camera _mainCamera;
         private float _playTimer = 0f;
         private bool _catIsChasing = false;
         private bool _sessionBondAwarded = false;
 
         private void Start()
         {
-            _mainCamera = Camera.main;
             _restPosition = transform.position;
 
             if (spriteRenderer == null) spriteRenderer = GetComponent<SpriteRenderer>();
             if (trailRenderer != null) trailRenderer.emitting = false;
+
+            // Start hidden if in hand mode
+            UpdateVisibility();
+
+            if (ToolModeManager.Instance != null)
+                ToolModeManager.Instance.OnModeChanged += OnModeChanged;
+        }
+
+        private void OnDestroy()
+        {
+            if (ToolModeManager.Instance != null)
+                ToolModeManager.Instance.OnModeChanged -= OnModeChanged;
         }
 
         private void Update()
         {
-            HandleDragInput();
+            bool isFeatherMode = ToolModeManager.Instance == null || ToolModeManager.Instance.IsFeatherMode;
+
+            if (isFeatherMode)
+            {
+                HandleDragInput();
+            }
+            else if (_isDragging)
+            {
+                // Switched to hand mode while dragging — stop
+                StopDrag();
+            }
 
             if (_isDragging)
             {
                 UpdateDrag();
                 UpdateCatChase();
             }
-            else if (!IsAtRestPosition())
+            else if (!IsAtRestPosition() && !isFeatherMode)
             {
                 ReturnToRest();
             }
         }
 
         /// <summary>
-        /// Handle touch/mouse drag input.
+        /// Handle touch input. In FeatherToy mode, any touch on empty space
+        /// (not hitting cat or bowls) starts the drag.
         /// </summary>
         private void HandleDragInput()
         {
             if (TouchInput.WasPressedThisFrame)
             {
-                if (IsTouchingToy())
+                // Check if touch is on an interactable (cat, bowl) — if so, let that handle it
+                Collider2D hit = Physics2D.OverlapPoint(TouchInput.WorldPosition);
+
+                // Allow drag if: hitting the toy itself, OR hitting nothing (empty space)
+                bool isEmptySpace = (hit == null);
+                bool isHittingToy = (hit != null && hit.gameObject == gameObject);
+
+                if (isEmptySpace || isHittingToy)
                 {
+                    // Move toy to touch position and start drag
+                    Vector3 worldPos = TouchInput.WorldPosition;
+                    worldPos.z = dragZOffset;
+                    transform.position = worldPos;
                     StartDrag();
                 }
             }
@@ -87,23 +133,14 @@ namespace CatRaising.Interactables
             }
         }
 
-        /// <summary>
-        /// Check if touch is on the toy.
-        /// </summary>
-        private bool IsTouchingToy()
-        {
-            return TouchInput.IsOverGameObject(gameObject);
-        }
-
-        /// <summary>
-        /// Start dragging the toy.
-        /// </summary>
         private void StartDrag()
         {
             _isDragging = true;
             _playTimer = 0f;
             _sessionBondAwarded = false;
 
+            // Show the toy
+            if (spriteRenderer != null) spriteRenderer.enabled = true;
             if (trailRenderer != null) trailRenderer.emitting = true;
 
             // Tell the cat to start playing
@@ -115,9 +152,6 @@ namespace CatRaising.Interactables
             Debug.Log("[DraggableToy] Drag started!");
         }
 
-        /// <summary>
-        /// Update the toy position to follow the touch/mouse.
-        /// </summary>
         private void UpdateDrag()
         {
             Vector3 worldPos = TouchInput.WorldPosition;
@@ -126,9 +160,17 @@ namespace CatRaising.Interactables
 
             _playTimer += Time.deltaTime;
 
-            // Increase cat happiness while playing
             if (catNeeds != null)
+            {
+                // Happiness increases while playing
                 catNeeds.IncreaseHappiness(happinessPerSecond * Time.deltaTime);
+
+                // Hunger decreases (playing burns energy)
+                catNeeds.DecreaseHunger(hungerDrainPerSecond * Time.deltaTime);
+
+                // Cleanliness decreases (rolling around getting dirty)
+                catNeeds.DecreaseCleanliness(cleanlinessDrainPerSecond * Time.deltaTime);
+            }
 
             // Award bond after minimum play time
             if (!_sessionBondAwarded && _playTimer >= minPlayTime)
@@ -143,9 +185,6 @@ namespace CatRaising.Interactables
             }
         }
 
-        /// <summary>
-        /// Make the cat chase the toy.
-        /// </summary>
         private void UpdateCatChase()
         {
             if (!_catIsChasing || catController == null) return;
@@ -155,11 +194,9 @@ namespace CatRaising.Interactables
 
             if (distance > chaseStopDistance)
             {
-                // Move cat toward toy
                 Vector3 direction = (transform.position - catTransform.position).normalized;
                 catTransform.position += direction * catChaseSpeed * Time.deltaTime;
 
-                // Face the toy
                 if (catController.CatAnimator != null)
                 {
                     catController.CatAnimator.SetFacingDirection(direction.x);
@@ -168,34 +205,22 @@ namespace CatRaising.Interactables
             }
             else
             {
-                // Cat "caught" the toy — pounce!
                 OnCatPounce();
             }
         }
 
-        /// <summary>
-        /// Called when the cat reaches the toy (pounce!).
-        /// </summary>
         private void OnCatPounce()
         {
-            // Bounce effect on the cat
             if (catController.CatAnimator != null)
                 catController.CatAnimator.PlayBounce();
 
-            // Spawn pounce effect
             if (pounceEffectPrefab != null)
-            {
                 Instantiate(pounceEffectPrefab, catController.transform.position + Vector3.up * 0.3f, Quaternion.identity);
-            }
 
-            // Extra happiness for catching it
             if (catNeeds != null)
                 catNeeds.IncreaseHappiness(2f);
         }
 
-        /// <summary>
-        /// Stop dragging the toy.
-        /// </summary>
         private void StopDrag()
         {
             _isDragging = false;
@@ -210,9 +235,6 @@ namespace CatRaising.Interactables
             Debug.Log($"[DraggableToy] Drag stopped. Play time: {_playTimer:F1}s");
         }
 
-        /// <summary>
-        /// Smoothly return the toy to its rest position.
-        /// </summary>
         private void ReturnToRest()
         {
             transform.position = Vector3.Lerp(transform.position, _restPosition, returnSpeed * Time.deltaTime);
@@ -223,12 +245,31 @@ namespace CatRaising.Interactables
             return Vector3.Distance(transform.position, _restPosition) < 0.05f;
         }
 
-        /// <summary>
-        /// Set a new rest position (e.g., when placed in a different spot).
-        /// </summary>
         public void SetRestPosition(Vector3 position)
         {
             _restPosition = position;
         }
+
+        /// <summary>
+        /// Called when tool mode changes. Show/hide the toy.
+        /// </summary>
+        private void OnModeChanged(ToolModeManager.ToolMode newMode)
+        {
+            UpdateVisibility();
+
+            // If switching away from feather while dragging, stop
+            if (newMode != ToolModeManager.ToolMode.FeatherToy && _isDragging)
+                StopDrag();
+        }
+
+        private void UpdateVisibility()
+        {
+            bool show = ToolModeManager.Instance == null || ToolModeManager.Instance.IsFeatherMode;
+
+            if (spriteRenderer != null && !_isDragging)
+                spriteRenderer.enabled = show;
+        }
+
+        public bool IsDragging => _isDragging;
     }
 }

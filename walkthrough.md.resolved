@@ -1,0 +1,238 @@
+# 🐱 Feature Update Walkthrough
+
+## Summary of All Changes
+
+| # | Feature | Files Changed |
+|---|---------|--------------|
+| 1 | Petting bond cooldown | `CatInteraction.cs` |
+| 2 | Camera zoom (not scale) when petting | `CatInteraction.cs`, **NEW** `CameraController.cs` |
+| 3 | Horizontal swipe to pan | **NEW** `CameraController.cs` |
+| 4 | Bowl approach only if food/water available | `CatAI.cs` |
+| 5 | Need thought bubble | **NEW** `NeedBubble.cs` |
+| 6 | Ground tap to call cat | `CameraController.cs`, `CatAI.cs` |
+| 7 | Feather toy mode toggle | **NEW** `ToolModeManager.cs`, `DraggableToy.cs`, `CatInteraction.cs` |
+| 8 | Self-grooming animation | `CatController.cs`, `CatAnimator.cs`, `CatAI.cs`, `CatNeeds.cs` |
+
+---
+
+## Unity Editor Setup
+
+### 1. CameraController (Pan + Zoom + Ground Tap)
+
+1. Select your **Main Camera** in the Hierarchy
+2. **Add Component** → `CameraController`
+3. Configure in Inspector:
+
+| Field | Value | Notes |
+|---|---|---|
+| Cam | (auto-detected) | |
+| Cat AI | Drag your Cat GameObject | Required for ground-tap calling |
+| Pan Min X / Pan Max X | `-5` / `5` | Adjust to your room width |
+| Drag Threshold | `15` | Pixels before a touch counts as drag vs tap |
+| Pan Sensitivity | `1` | |
+| Pet Zoom Size | `3` | Smaller = more zoomed in when petting |
+| Zoom Speed | `3` | How fast the zoom transitions |
+| Zoom Y Offset | `0.5` | Centers slightly above the cat |
+
+**How it works:**
+- **Hand mode + drag on empty space** → Camera pans horizontally
+- **Hand mode + tap on empty space** → Cat walks to that spot
+- **Petting the cat** → Camera smoothly zooms in, zooms back out when done
+
+---
+
+### 2. ToolModeManager (Hand / Feather Toggle Button)
+
+1. Create a **Canvas** if you don't have one:
+   - Hierarchy → Right-click → **UI → Canvas**
+   - Set Canvas Scaler to **Scale With Screen Size**, Reference Resolution `1080×1920`
+
+2. Create the toggle button:
+   - Right-click Canvas → **UI → Button**
+   - Rename to `ToolModeButton`
+   - Position it in the **bottom-right corner** (anchor bottom-right)
+   - Size: `80×80` or similar
+   - Remove the child `Text` object (we use icons instead)
+
+3. Create an **empty GameObject** in the scene (or on the Canvas):
+   - Rename to `ToolModeManager`
+   - **Add Component** → `ToolModeManager`
+   - Configure:
+
+| Field | Value |
+|---|---|
+| Toggle Button | Drag the `ToolModeButton` |
+| Button Icon | Drag the `Image` component on the button |
+| Hand Icon | Assign a hand sprite (create placeholder) |
+| Feather Icon | Assign a feather sprite (create placeholder) |
+
+**How it works:**
+- Tap the button → toggles between Hand 🖐️ and Feather 🪶
+- **Hand mode**: Tap cat = pet, tap ground = call cat, drag = pan camera
+- **Feather mode**: Touch/drag empty space = feather toy appears and cat chases it
+
+---
+
+### 3. NeedBubble (Thought Bubble Above Cat)
+
+1. Under your **Cat GameObject**, create a child:
+   - Right-click Cat → **Create Empty** → Rename to `NeedBubble`
+   - Position: `(0.8, 1.5, 0)` (above and to the right of the cat)
+
+2. Add a **SpriteRenderer** to `NeedBubble`:
+   - Assign your thought bubble background sprite
+   - Sorting Layer: same as cat, Order: above cat
+
+3. Create a child under `NeedBubble`:
+   - Right-click NeedBubble → **Create Empty** → Rename to `Icon`
+   - Add a **SpriteRenderer** to `Icon`
+   - This displays the need icon inside the bubble
+
+4. Add the `NeedBubble` script to the `NeedBubble` object:
+
+| Field | Value |
+|---|---|
+| Cat Needs | (auto-detected from parent) |
+| Bubble Renderer | The bubble background SpriteRenderer |
+| Icon Renderer | The Icon child's SpriteRenderer |
+| Hunger Icon | 🐟 Fish or food bowl sprite |
+| Thirst Icon | 💧 Water drop sprite |
+| Happiness Icon | 😢 Sad face sprite |
+| Cleanliness Icon | ✨ Sparkle or soap sprite |
+| Low Threshold | `30` (shows when need drops below this) |
+
+**Priority order**: Hunger > Thirst > Happiness > Cleanliness
+
+The bubble fades in/out smoothly and bobs gently when visible.
+
+---
+
+### 4. CatAI — Updated Bowl References
+
+> [!IMPORTANT]
+> The bowl references in CatAI changed from **Transform** to **FoodBowl/WaterBowl scripts**. You need to re-assign them!
+
+1. Select your **Cat GameObject**
+2. In the `CatAI` component, find "Need-Driven Behavior":
+
+| Old Field | New Field | What to Drag |
+|---|---|---|
+| ~~Food Bowl Transform~~ | **Food Bowl** | Drag the FoodBowl **GameObject** (it will pick up the script) |
+| ~~Water Bowl Transform~~ | **Water Bowl** | Drag the WaterBowl **GameObject** |
+
+Now the cat **only walks to bowls when they contain food/water**, not when empty.
+
+---
+
+### 5. DraggableToy — Feather Toy Setup
+
+The DraggableToy is already in your scene. Changes to note:
+
+- **Only active in FeatherToy mode** (automatically hides in Hand mode)
+- **Any touch on empty space** in FeatherToy mode moves the feather (no need to tap the toy's collider first)
+- While playing: **happiness ↑**, **hunger ↓**, **cleanliness ↓**
+
+Configure in Inspector:
+
+| Field | Default | Notes |
+|---|---|---|
+| Happiness Per Second | `5` | |
+| Hunger Drain Per Second | `1` | How fast hunger drops while playing |
+| Cleanliness Drain Per Second | `0.5` | How fast cleanliness drops while playing |
+
+---
+
+### 6. Grooming Animation Setup
+
+The grooming system is fully scripted. What you need to create:
+
+**Sprite Art: Cat Grooming** (4-8 frames, ~3 seconds)
+
+| Frame | Description |
+|---|---|
+| 1 | Cat sitting, lifting paw |
+| 2 | Paw near face, starting to lick |
+| 3 | Licking paw |
+| 4 | Licking body/side |
+| 5 | Continue grooming |
+| 6 | Finishing, paw down |
+
+**In Unity:**
+1. Create animation clip `Cat_Grooming.anim` — **Loop Time: ❌ Off**
+2. In your Animator Controller:
+   - Add state `Grooming` → assign `Cat_Grooming` clip
+   - Add **Any State → Grooming** transition:
+     - Condition: `State` Equals `9`
+     - Has Exit Time: ❌ Off
+     - Can Transition To Self: ❌ Off
+     - Transition Duration: `0`
+
+3. In the `CatAnimator` component on your cat, set:
+   - **Grooming Duration** = match your clip length (e.g., `3.0`)
+
+**How it works at runtime:**
+```
+AI decides: "time to groom" (random chance during idle, higher when dirty)
+  → CatController enters Grooming state
+  → CatAnimator plays Cat_Grooming clip + starts 3s timer
+  → Timer fires → CatController gives +15 cleanliness → returns to Idle
+```
+
+---
+
+## Complete Scene Hierarchy
+
+```
+📁 Scene
+├── 🎥 Main Camera
+│   └── 📜 CameraController
+├── 🐱 Cat
+│   ├── 📜 CatController
+│   ├── 📜 CatAI (bowl refs → FoodBowl & WaterBowl scripts)
+│   ├── 📜 CatNeeds
+│   ├── 📜 CatAnimator
+│   ├── 📜 CatInteraction
+│   └── 💭 NeedBubble (child)
+│       ├── SpriteRenderer (bubble background)
+│       ├── 📜 NeedBubble script
+│       └── 🖼️ Icon (child)
+│           └── SpriteRenderer (need icon)
+├── 🍽️ FoodBowl
+│   └── 📜 FoodBowl
+├── 💧 WaterBowl
+│   └── 📜 WaterBowl
+├── 🪶 FeatherToy
+│   └── 📜 DraggableToy
+├── ⚙️ GameManager
+│   ├── 📜 GameManager
+│   ├── 📜 TimeManager
+│   └── 📜 BondSystem
+├── 🖼️ Background
+│   └── SpriteRenderer
+└── 🖥️ Canvas (UI)
+    ├── ToolModeManager (script)
+    └── ToolModeButton (Button)
+        └── Image (hand/feather icon)
+```
+
+---
+
+## Interaction Flow Diagram
+
+```mermaid
+graph TD
+    A["👆 Player Touches Screen"] --> B{What was hit?}
+    
+    B -->|Cat collider| C{Tool Mode?}
+    C -->|🖐️ Hand| D["Pet the cat\n(camera zooms in)"]
+    C -->|🪶 Feather| E["Nothing happens\n(feather doesn't pet)"]
+    
+    B -->|Bowl collider| F["Fill bowl\n(if empty)"]
+    
+    B -->|Empty space| G{Tool Mode?}
+    G -->|🖐️ Hand + Tap| H["Call cat to spot\n(cat walks over)"]
+    G -->|🖐️ Hand + Drag| I["Pan camera\n(horizontal only)"]
+    G -->|🪶 Feather| J["Move feather toy\n(cat chases it)"]
+    
+    B -->|Toggle button| K["Switch mode\n🖐️ ↔ 🪶"]
+```
