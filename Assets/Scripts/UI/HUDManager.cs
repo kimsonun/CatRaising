@@ -34,7 +34,6 @@ namespace CatRaising.UI
 
         [Header("Time Display")]
         [SerializeField] private TextMeshProUGUI timeText;
-        [SerializeField] private Image timeIcon;
 
         [Header("Welcome Back Panel")]
         [SerializeField] private GameObject welcomeBackPanel;
@@ -119,10 +118,10 @@ namespace CatRaising.UI
             {
                 string phase = TimeManager.Instance.CurrentPhase switch
                 {
-                    TimeManager.DayPhase.Morning => "☀️ Morning",
-                    TimeManager.DayPhase.Afternoon => "🌤 Afternoon",
-                    TimeManager.DayPhase.Evening => "🌅 Evening",
-                    TimeManager.DayPhase.Night => "🌙 Night",
+                    TimeManager.DayPhase.Morning => "",
+                    TimeManager.DayPhase.Afternoon => "",
+                    TimeManager.DayPhase.Evening => "",
+                    TimeManager.DayPhase.Night => "",
                     _ => ""
                 };
                 timeText.text = $"{System.DateTime.Now:HH:mm} {phase}";
@@ -142,14 +141,15 @@ namespace CatRaising.UI
 
             string stateEmoji = catController.CurrentState switch
             {
-                CatController.CatState.Idle => "🐱 Sitting",
-                CatController.CatState.Walking => "🐾 Walking",
-                CatController.CatState.Sleeping => "💤 Sleeping",
-                CatController.CatState.BeingPet => "💕 Being Pet",
-                CatController.CatState.Eating => "🍽 Eating",
-                CatController.CatState.Drinking => "💧 Drinking",
-                CatController.CatState.Playing => "🎾 Playing",
-                _ => "🐱"
+                CatController.CatState.Idle => "Sitting",
+                CatController.CatState.Walking => "Walking",
+                CatController.CatState.Sleeping => "Sleeping...",
+                CatController.CatState.BeingPet => "Being Pet ^^!",
+                CatController.CatState.Eating => "Eating",
+                CatController.CatState.Drinking => "Drinking",
+                CatController.CatState.Playing => "Playing",
+                CatController.CatState.Grooming => "Grooming",
+                _ => "Goofing around..."
             };
 
             catStateText.text = stateEmoji;
@@ -208,7 +208,7 @@ namespace CatRaising.UI
             if (milestonePopup == null) return;
 
             if (milestoneText != null)
-                milestoneText.text = $"🎉 New bond tier!\n{tierName}";
+                milestoneText.text = $"You and {catNameText} are now\n{tierName}!";
 
             milestonePopup.SetActive(true);
             CancelInvoke(nameof(HideMilestonePopup));

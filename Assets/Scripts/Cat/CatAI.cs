@@ -103,6 +103,10 @@ namespace CatRaising.Cat
             {
                 MakeDecision();
             }
+            if (Input.GetKeyDown(KeyCode.M))
+            {
+                StartGrooming();    
+            }
         }
 
         /// <summary>
@@ -239,7 +243,7 @@ namespace CatRaising.Cat
 
         private void StartGrooming()
         {
-            _currentStateDuration = 5f; // Will be overridden by animation completion
+            _currentStateDuration = 7f; // Will be overridden by animation completion
             catController.RequestState(CatController.CatState.Grooming);
             Debug.Log("[CatAI] Cat decided to groom itself.");
         }

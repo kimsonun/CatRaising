@@ -92,6 +92,9 @@ namespace CatRaising.Core
 
             if (TouchInput.WasPressedThisFrame)
             {
+                // Ignore if touch is over a UI element (button, slider, etc.)
+                if (TouchInput.IsOverUI) return;
+
                 // Check if touch is on an interactable — if so, don't process
                 Collider2D hit = Physics2D.OverlapPoint(TouchInput.WorldPosition);
                 if (hit != null) return;

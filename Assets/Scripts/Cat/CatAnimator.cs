@@ -12,7 +12,7 @@ namespace CatRaising.Cat
     /// Parameters:
     ///   - "State" (int):    0=Idle, 1=Walking, 2=LayingDown, 3=Sleeping, 
     ///                       4=WakingUp, 5=Stretching, 6=Eating, 7=Drinking,
-    ///                       8=Playing, 9=Grooming
+    ///                       8=Playing, 9=Grooming, 10=Running
     ///   - "Speed" (float):  movement speed for walk animation playback rate
     /// 
     /// States (in Animator Controller):
@@ -74,7 +74,8 @@ namespace CatRaising.Cat
             Eating = 6,
             Drinking = 7,
             Playing = 8,
-            Grooming = 9
+            Grooming = 9,
+            Running = 10
         }
 
         /// <summary>
@@ -250,6 +251,32 @@ namespace CatRaising.Cat
                         _spriteRenderer.sprite = idleSprite;
                     break;
             }
+        }
+
+        // ─── Visual Override ─────────────────────────────────────
+        // Used by DraggableToy to show Running animation while FSM state is Playing.
+
+        private bool _hasVisualOverride = false;
+
+        /// <summary>
+        /// Override the visual animation state without affecting the FSM.
+        /// Used to show Running animation while the cat chases the feather toy.
+        /// </summary>
+        public void OverrideVisualState(AnimState state)
+        {
+            _hasVisualOverride = true;
+            if (_useAnimator)
+                _animator.SetInteger(StateParam, (int)state);
+        }
+
+        /// <summary>
+        /// Clear the visual override and restore FSM-driven animation.
+        /// </summary>
+        public void ClearVisualOverride()
+        {
+            if (!_hasVisualOverride) return;
+            _hasVisualOverride = false;
+            SetState(_currentAnimState);
         }
 
         public SpriteRenderer SpriteRenderer => _spriteRenderer;

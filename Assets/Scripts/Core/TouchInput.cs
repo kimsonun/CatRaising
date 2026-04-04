@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 namespace CatRaising.Core
@@ -10,6 +11,7 @@ namespace CatRaising.Core
     /// Usage:
     ///   if (TouchInput.WasPressedThisFrame) { ... }
     ///   if (TouchInput.IsPressed) { ... }
+    ///   if (TouchInput.IsOverUI) { ... }  // check before world interactions
     ///   Vector2 pos = TouchInput.Position;
     /// </summary>
     public static class TouchInput
@@ -24,6 +26,20 @@ namespace CatRaising.Core
             {
                 var pointer = Pointer.current;
                 return pointer != null && pointer.press.wasPressedThisFrame;
+            }
+        }
+
+        /// <summary>
+        /// Whether the pointer is currently over a UI element (Canvas/EventSystem).
+        /// Check this BEFORE processing world-space input to avoid clicks
+        /// "going through" UI buttons to the game world.
+        /// </summary>
+        public static bool IsOverUI
+        {
+            get
+            {
+                var eventSystem = EventSystem.current;
+                return eventSystem != null && eventSystem.IsPointerOverGameObject();
             }
         }
 

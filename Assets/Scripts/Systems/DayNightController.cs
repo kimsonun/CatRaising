@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 using CatRaising.Core;
+using UnityEngine.UI;
 
 namespace CatRaising.Systems
 {
@@ -33,6 +34,10 @@ namespace CatRaising.Systems
         [SerializeField] private Color afternoonTint = new Color(1f, 1f, 0.98f);
         [SerializeField] private Color eveningTint = new Color(1f, 0.82f, 0.6f);
         [SerializeField] private Color nightTint = new Color(0.55f, 0.58f, 0.82f);
+
+        [SerializeField] private Image sunMoonIcon;
+        [SerializeField] private Sprite[] sunMoonSprites;
+        [SerializeField] private GameObject[] arrows;
 
         private Color _targetLightColor;
         private float _targetIntensity;
@@ -88,24 +93,40 @@ namespace CatRaising.Systems
                     _targetLightColor = morningTint;
                     _targetIntensity = morningIntensity;
                     _targetBackgroundTint = morningTint;
+                    sunMoonIcon.sprite = sunMoonSprites[0];
+                    arrows[0].SetActive(true);
+                    arrows[1].SetActive(false);
+                    arrows[2].SetActive(false);
                     break;
 
                 case TimeManager.DayPhase.Afternoon:
                     _targetLightColor = afternoonTint;
                     _targetIntensity = afternoonIntensity;
                     _targetBackgroundTint = afternoonTint;
+                    sunMoonIcon.sprite = sunMoonSprites[1];
+                    arrows[0].SetActive(false);
+                    arrows[1].SetActive(true);
+                    arrows[2].SetActive(false);
                     break;
 
                 case TimeManager.DayPhase.Evening:
                     _targetLightColor = eveningTint;
                     _targetIntensity = eveningIntensity;
                     _targetBackgroundTint = eveningTint;
+                    sunMoonIcon.sprite = sunMoonSprites[2];
+                    arrows[0].SetActive(false);
+                    arrows[1].SetActive(true);
+                    arrows[2].SetActive(false);
                     break;
 
                 case TimeManager.DayPhase.Night:
                     _targetLightColor = nightTint;
                     _targetIntensity = nightIntensity;
                     _targetBackgroundTint = nightTint;
+                    sunMoonIcon.sprite = sunMoonSprites[3];
+                    arrows[0].SetActive(false);
+                    arrows[1].SetActive(false);
+                    arrows[2].SetActive(true);
                     break;
             }
 

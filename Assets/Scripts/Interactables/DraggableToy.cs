@@ -110,6 +110,9 @@ namespace CatRaising.Interactables
         {
             if (TouchInput.WasPressedThisFrame)
             {
+                // Don't process if touch is over UI
+                if (TouchInput.IsOverUI) return;
+
                 // Check if touch is on an interactable (cat, bowl) — if so, let that handle it
                 Collider2D hit = Physics2D.OverlapPoint(TouchInput.WorldPosition);
 
@@ -201,6 +204,8 @@ namespace CatRaising.Interactables
                 {
                     catController.CatAnimator.SetFacingDirection(direction.x);
                     catController.CatAnimator.SetSpeed(catChaseSpeed);
+                    // Show running animation while chasing
+                    catController.CatAnimator.OverrideVisualState(CatAnimator.AnimState.Running);
                 }
             }
             else
@@ -212,7 +217,10 @@ namespace CatRaising.Interactables
         private void OnCatPounce()
         {
             if (catController.CatAnimator != null)
+            {
+                catController.CatAnimator.ClearVisualOverride();
                 catController.CatAnimator.PlayBounce();
+            }
 
             if (pounceEffectPrefab != null)
                 Instantiate(pounceEffectPrefab, catController.transform.position + Vector3.up * 0.3f, Quaternion.identity);
@@ -227,6 +235,10 @@ namespace CatRaising.Interactables
             _catIsChasing = false;
 
             if (trailRenderer != null) trailRenderer.emitting = false;
+
+            // Clear running animation override
+            if (catController != null && catController.CatAnimator != null)
+                catController.CatAnimator.ClearVisualOverride();
 
             // Return cat to idle
             if (catController != null && catController.CurrentState == CatController.CatState.Playing)
