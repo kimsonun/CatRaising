@@ -168,6 +168,10 @@ namespace CatRaising.Cat
             if (CameraController.Instance != null)
                 CameraController.Instance.StartPetZoom(transform);
 
+            // Daily task hook
+            if (DailyTaskManager.Instance != null)
+                DailyTaskManager.Instance.CheckTask(DailyTaskType.PetCat);
+
             Debug.Log("[CatInteraction] Petting started!");
         }
 

@@ -16,7 +16,7 @@ namespace CatRaising.Cat
         [SerializeField] private CatNeeds catNeeds;
 
         [Header("Wander Settings")]
-        [Tooltip("Bounds for random wander targets (world space)")]
+        [Tooltip("Fallback bounds if no IsometricGrid is available")]
         [SerializeField] private Vector2 wanderBoundsMin = new Vector2(-7f, -3f);
         [SerializeField] private Vector2 wanderBoundsMax = new Vector2(7f, -1f);
         [SerializeField] private float wanderSpeed = 1.5f;
@@ -231,9 +231,18 @@ namespace CatRaising.Cat
 
         private void StartWandering()
         {
-            float x = Random.Range(wanderBoundsMin.x, wanderBoundsMax.x);
-            float y = Random.Range(wanderBoundsMin.y, wanderBoundsMax.y);
-            _wanderTarget = new Vector3(x, y, 0f);
+            // Use isometric grid if available, else fall back to rectangular bounds
+            if (IsometricGrid.Instance != null)
+            {
+                _wanderTarget = IsometricGrid.Instance.GetRandomWalkablePosition();
+            }
+            else
+            {
+                float x = Random.Range(wanderBoundsMin.x, wanderBoundsMax.x);
+                float y = Random.Range(wanderBoundsMin.y, wanderBoundsMax.y);
+                _wanderTarget = new Vector3(x, y, 0f);
+            }
+
             _isMovingToTarget = true;
             _currentStateDuration = 30f;
             _playerCalledCat = false;
@@ -276,11 +285,31 @@ namespace CatRaising.Cat
         /// </summary>
         public void WalkToPosition(Vector3 target)
         {
-            // Clamp target to wander bounds
-            target.x = Mathf.Clamp(target.x, wanderBoundsMin.x, wanderBoundsMax.x);
-            target.y = Mathf.Clamp(target.y, wanderBoundsMin.y, wanderBoundsMax.y);
-            target.z = 0f;
+            // Snap to nearest walkable tile on the isometric grid
+            if (IsometricGrid.Instance != null)
+            {
+                var grid = IsometricGrid.Instance;
+                Vector2Int cell = grid.WorldToGrid(target);
 
+                // If the target tile is walkable, go there directly
+                if (grid.IsTileWalkable(cell))
+                {
+                    target = grid.GridToWorld(cell);
+                }
+                else
+                {
+                    // Find the nearest walkable tile
+                    target = FindNearestWalkable(target);
+                }
+            }
+            else
+            {
+                // Fallback: clamp to rectangular bounds
+                target.x = Mathf.Clamp(target.x, wanderBoundsMin.x, wanderBoundsMax.x);
+                target.y = Mathf.Clamp(target.y, wanderBoundsMin.y, wanderBoundsMax.y);
+            }
+
+            target.z = 0f;
             _wanderTarget = target;
             _isMovingToTarget = true;
             _playerCalledCat = true;
@@ -289,6 +318,34 @@ namespace CatRaising.Cat
 
             catController.RequestState(CatController.CatState.Walking);
             Debug.Log($"[CatAI] Player called cat to {target}");
+        }
+
+        /// <summary>
+        /// Find the nearest walkable tile to a world position.
+        /// </summary>
+        private Vector3 FindNearestWalkable(Vector3 worldPos)
+        {
+            if (IsometricGrid.Instance == null) return worldPos;
+
+            var grid = IsometricGrid.Instance;
+            var walkable = grid.GetAllWalkableTiles();
+            if (walkable.Count == 0) return worldPos;
+
+            float bestDist = float.MaxValue;
+            Vector3 bestPos = worldPos;
+
+            foreach (var cell in walkable)
+            {
+                Vector3 cellWorld = grid.GridToWorld(cell);
+                float dist = Vector3.SqrMagnitude(cellWorld - worldPos);
+                if (dist < bestDist)
+                {
+                    bestDist = dist;
+                    bestPos = cellWorld;
+                }
+            }
+
+            return bestPos;
         }
 
         /// <summary>
@@ -328,6 +385,16 @@ namespace CatRaising.Cat
             _aiEnabled = enabled;
             if (!enabled)
                 _isMovingToTarget = false;
+        }
+
+        /// <summary>
+        /// Update wander bounds (called by RoomManager on room switch).
+        /// </summary>
+        public void SetWanderBounds(Vector2 min, Vector2 max)
+        {
+            wanderBoundsMin = min;
+            wanderBoundsMax = max;
+            Debug.Log($"[CatAI] Wander bounds updated: {min} to {max}");
         }
 
         public Vector3 WanderTarget => _wanderTarget;

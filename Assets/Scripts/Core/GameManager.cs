@@ -22,33 +22,25 @@ namespace CatRaising.Core
         [Tooltip("Reference to the NamingScreenUI")]
         public CatRaising.UI.NamingScreenUI namingScreen;
 
+        [Header("Milestone 3 Systems")]
+        public CatRaising.Systems.PawCoinManager pawCoinManager;
+        public CatRaising.Systems.DailyTaskManager dailyTaskManager;
+        public CatRaising.Systems.AchievementManager achievementManager;
+        public RoomManager roomManager;
+
         /// <summary>
         /// Current game data (loaded from save or freshly created).
         /// </summary>
         public GameData Data { get; private set; }
 
-        /// <summary>
-        /// Whether this is the player's first time launching the game.
-        /// </summary>
         public bool IsFirstLaunch => Data.isFirstLaunch;
-
-        /// <summary>
-        /// The cat's name as set by the player.
-        /// </summary>
         public string CatName => Data.catName;
 
-        /// <summary>
-        /// Event fired when the game data is ready (after load + name entry).
-        /// </summary>
         public event Action OnGameReady;
-
-        /// <summary>
-        /// Event fired when the cat is named (first launch complete).
-        /// </summary>
         public event Action<string> OnCatNamed;
 
         // Auto-save interval
-        private const float AUTO_SAVE_INTERVAL = 60f; // Save every 60 seconds
+        private const float AUTO_SAVE_INTERVAL = 60f;
         private float _autoSaveTimer;
 
         private void Awake()
@@ -64,6 +56,7 @@ namespace CatRaising.Core
         private void Start()
         {
             LoadGame();
+            //SaveSystem.DeleteSave(); // TEMP: Clear save for testing purposes
         }
 
         private void Update()
@@ -82,9 +75,6 @@ namespace CatRaising.Core
             }
         }
 
-        /// <summary>
-        /// Load game data and handle first launch vs returning player.
-        /// </summary>
         private void LoadGame()
         {
             Data = SaveSystem.Load();
@@ -96,15 +86,11 @@ namespace CatRaising.Core
             }
             else
             {
-                // Calculate offline time and apply need decay
                 ApplyOfflineDecay();
                 InitializeGame();
             }
         }
 
-        /// <summary>
-        /// Show the naming screen for first-time players.
-        /// </summary>
         private void ShowNamingScreen()
         {
             if (namingScreen != null)
@@ -118,9 +104,6 @@ namespace CatRaising.Core
             }
         }
 
-        /// <summary>
-        /// Called when the player confirms their cat's name.
-        /// </summary>
         private void OnNameConfirmed(string catName)
         {
             Data.catName = catName;
@@ -133,32 +116,53 @@ namespace CatRaising.Core
             Data.happiness = 100f;
             Data.cleanliness = 100f;
 
+            // First-time unlocked rooms
+            if (Data.unlockedRoomIds == null || Data.unlockedRoomIds.Count == 0)
+                Data.unlockedRoomIds = new System.Collections.Generic.List<string> { "living_room" };
+
             SaveGame();
             OnCatNamed?.Invoke(catName);
             InitializeGame();
         }
 
-        /// <summary>
-        /// Initialize all systems after data is ready.
-        /// </summary>
         private void InitializeGame()
         {
-            Debug.Log($"[GameManager] Game initialized. Cat: {Data.catName}, Bond: {Data.bondLevel:F1}");
+            Debug.Log($"[GameManager] Game initialized. Cat: {Data.catName}, Bond: {Data.bondLevel:F1}, Coins: {Data.pawCoins}");
 
-            // Push saved data into systems
+            // Track days played
+            string today = GameData.TodayString;
+            if (Data.lastPlayedTime != "" && Data.GetLastPlayedTime().Date < DateTime.Now.Date)
+                Data.daysPlayed++;
+
+            Data.SetLastPlayedTime(DateTime.Now);
+
+            // ─── Push saved data into core systems ──────────────
             if (catNeeds != null)
                 catNeeds.LoadFromData(Data);
 
             if (bondSystem != null)
                 bondSystem.LoadFromData(Data);
 
+            // ─── Initialize Milestone 3 systems ─────────────────
+            if (pawCoinManager != null)
+                pawCoinManager.LoadFromData(Data);
+
+            if (achievementManager != null)
+                achievementManager.LoadFromData(Data);
+
+            if (roomManager != null)
+                roomManager.LoadFromData(Data);
+
+            if (dailyTaskManager != null)
+                dailyTaskManager.Initialize(Data);
+
+            // Check achievements on load
+            if (achievementManager != null)
+                achievementManager.CheckAll();
+
             OnGameReady?.Invoke();
         }
 
-        /// <summary>
-        /// Apply need decay for time spent offline.
-        /// This ensures needs drop while the player is away, but never punishingly.
-        /// </summary>
         private void ApplyOfflineDecay()
         {
             if (TimeManager.Instance == null) return;
@@ -168,38 +172,39 @@ namespace CatRaising.Core
 
             Debug.Log($"[GameManager] Player was away for {hoursAway:F1} hours. Applying offline decay.");
 
-            // Decay rates (per hour): hunger=25, thirst=33.3, happiness=16.7, cleanliness=12.5
-            // These match the design doc (hunger empties in 4h, thirst in 3h, etc.)
             Data.hunger = Mathf.Max(5f, Data.hunger - hoursAway * 25f);
             Data.thirst = Mathf.Max(5f, Data.thirst - hoursAway * 33.3f);
             Data.happiness = Mathf.Max(10f, Data.happiness - hoursAway * 16.7f);
             Data.cleanliness = Mathf.Max(15f, Data.cleanliness - hoursAway * 12.5f);
 
-            // Food and water bowls also deplete over time (cat eats/drinks while away)
             Data.foodBowlAmount = Mathf.Max(0f, Data.foodBowlAmount - hoursAway * 20f);
             Data.waterBowlAmount = Mathf.Max(0f, Data.waterBowlAmount - hoursAway * 25f);
         }
 
-        /// <summary>
-        /// Save current game state to disk.
-        /// </summary>
         public void SaveGame()
         {
             if (Data == null) return;
 
-            // Pull current state from systems
+            // Pull current state from core systems
             if (catNeeds != null)
                 catNeeds.SaveToData(Data);
 
             if (bondSystem != null)
                 bondSystem.SaveToData(Data);
 
+            // Save Milestone 3 systems
+            if (pawCoinManager != null)
+                pawCoinManager.SaveToData(Data);
+
+            if (achievementManager != null)
+                achievementManager.SaveToData(Data);
+
+            if (roomManager != null)
+                roomManager.SaveToData(Data);
+
             SaveSystem.Save(Data);
         }
 
-        /// <summary>
-        /// Called when the app is about to be paused/backgrounded (mobile).
-        /// </summary>
         private void OnApplicationPause(bool pauseStatus)
         {
             if (pauseStatus && Data != null && !Data.isFirstLaunch)
@@ -209,9 +214,6 @@ namespace CatRaising.Core
             }
         }
 
-        /// <summary>
-        /// Called when the app is about to quit.
-        /// </summary>
         private void OnApplicationQuit()
         {
             if (Data != null && !Data.isFirstLaunch)

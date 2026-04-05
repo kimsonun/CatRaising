@@ -105,6 +105,14 @@ namespace CatRaising.Interactables
             if (GameManager.Instance != null && GameManager.Instance.Data != null)
                 GameManager.Instance.Data.totalFeedings++;
 
+            // Daily task hook
+            if (DailyTaskManager.Instance != null)
+                DailyTaskManager.Instance.CheckTask(DailyTaskType.FeedCat);
+
+            // Achievement check
+            if (AchievementManager.Instance != null)
+                AchievementManager.Instance.CheckAll();
+
             // Spawn fill effect
             if (fillEffectPrefab != null)
                 Instantiate(fillEffectPrefab, transform.position + Vector3.up * 0.5f, Quaternion.identity);

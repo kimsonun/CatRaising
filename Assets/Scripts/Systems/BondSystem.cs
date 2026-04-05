@@ -71,9 +71,8 @@ namespace CatRaising.Systems
         /// </summary>
         public void AddBond(float amount, string source = "")
         {
-            float previousLevel = _bondLevel;
+            float previousLevel = Mathf.FloorToInt(_bondLevel);
             _bondLevel = Mathf.Min(maxBond, _bondLevel + amount);
-
             // Check for milestone
             CheckMilestones(previousLevel, _bondLevel);
 
@@ -117,7 +116,7 @@ namespace CatRaising.Systems
         {
             for (int i = _currentMilestoneIndex + 1; i < milestones.Length; i++)
             {
-                if (oldLevel < milestones[i] && newLevel >= milestones[i])
+                if (oldLevel <= milestones[i] && newLevel >= milestones[i])
                 {
                     _currentMilestoneIndex = i;
                     string tierName = BondTierName;

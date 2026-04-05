@@ -1,238 +1,350 @@
-# 🐱 Feature Update Walkthrough
+# Milestone 3: Home & Decoration — Setup Walkthrough
 
-## Summary of All Changes
+## Files Created/Modified Summary
 
-| # | Feature | Files Changed |
-|---|---------|--------------|
-| 1 | Petting bond cooldown | `CatInteraction.cs` |
-| 2 | Camera zoom (not scale) when petting | `CatInteraction.cs`, **NEW** `CameraController.cs` |
-| 3 | Horizontal swipe to pan | **NEW** `CameraController.cs` |
-| 4 | Bowl approach only if food/water available | `CatAI.cs` |
-| 5 | Need thought bubble | **NEW** `NeedBubble.cs` |
-| 6 | Ground tap to call cat | `CameraController.cs`, `CatAI.cs` |
-| 7 | Feather toy mode toggle | **NEW** `ToolModeManager.cs`, `DraggableToy.cs`, `CatInteraction.cs` |
-| 8 | Self-grooming animation | `CatController.cs`, `CatAnimator.cs`, `CatAI.cs`, `CatNeeds.cs` |
+### New Files (18)
+| File | Purpose |
+|---|---|
+| [PawCoinManager.cs](file:///d:/Project/CatRaising/Assets/Scripts/Systems/PawCoinManager.cs) | Currency singleton |
+| [DailyTaskManager.cs](file:///d:/Project/CatRaising/Assets/Scripts/Systems/DailyTaskManager.cs) | 5 daily tasks with reset |
+| [AchievementManager.cs](file:///d:/Project/CatRaising/Assets/Scripts/Systems/AchievementManager.cs) | 25 achievements |
+| [RoomManager.cs](file:///d:/Project/CatRaising/Assets/Scripts/Core/RoomManager.cs) | 3-room switching |
+| [FurnitureInstance.cs](file:///d:/Project/CatRaising/Assets/Scripts/Interactables/FurnitureInstance.cs) | Placed furniture behavior |
+| [ShopUI.cs](file:///d:/Project/CatRaising/Assets/Scripts/UI/ShopUI.cs) | Shop panel with catalog |
+| [ShopItemSlotUI.cs](file:///d:/Project/CatRaising/Assets/Scripts/UI/ShopItemSlotUI.cs) | Shop item card |
+| [RoomSwitcherUI.cs](file:///d:/Project/CatRaising/Assets/Scripts/UI/RoomSwitcherUI.cs) | Room navigation arrows |
+| [DailyTaskUI.cs](file:///d:/Project/CatRaising/Assets/Scripts/UI/DailyTaskUI.cs) | Task checklist panel |
+| [AchievementUI.cs](file:///d:/Project/CatRaising/Assets/Scripts/UI/AchievementUI.cs) | Achievement popup + list |
+| [FurniturePlacementUI.cs](file:///d:/Project/CatRaising/Assets/Scripts/UI/FurniturePlacementUI.cs) | Furniture drag-to-place |
+| [MiniGameManager.cs](file:///d:/Project/CatRaising/Assets/Scripts/MiniGame/MiniGameManager.cs) | Mini-game framework |
+| [Fish.cs](file:///d:/Project/CatRaising/Assets/Scripts/MiniGame/Fish.cs) | Fish entity |
+| [FishSpawner.cs](file:///d:/Project/CatRaising/Assets/Scripts/MiniGame/FishSpawner.cs) | Fish spawning |
+| [CatFishingGame.cs](file:///d:/Project/CatRaising/Assets/Scripts/MiniGame/CatFishingGame.cs) | Fishing game UI |
+
+### Modified Files (8)
+| File | Changes |
+|---|---|
+| [PublicEnum.cs](file:///d:/Project/CatRaising/Assets/Scripts/Misc/PublicEnum.cs) | Added DailyTaskType, ShopCategory, FurnitureInteractionType, AchievementId |
+| [GameData.cs](file:///d:/Project/CatRaising/Assets/Scripts/Data/GameData.cs) | Added coins, rooms, furniture, tasks, achievements fields |
+| [GameManager.cs](file:///d:/Project/CatRaising/Assets/Scripts/Core/GameManager.cs) | Wired all new systems to save/load |
+| [HUDManager.cs](file:///d:/Project/CatRaising/Assets/Scripts/UI/HUDManager.cs) | Milestone popup → close button |
+| [FoodBowl.cs](file:///d:/Project/CatRaising/Assets/Scripts/Interactables/FoodBowl.cs) | Daily task + achievement hooks |
+| [WaterBowl.cs](file:///d:/Project/CatRaising/Assets/Scripts/Interactables/WaterBowl.cs) | Daily task + achievement hooks |
+| [CatInteraction.cs](file:///d:/Project/CatRaising/Assets/Scripts/Cat/CatInteraction.cs) | Daily task hook |
+| [DraggableToy.cs](file:///d:/Project/CatRaising/Assets/Scripts/Interactables/DraggableToy.cs) | Daily task + achievement hooks |
+| [CatAI.cs](file:///d:/Project/CatRaising/Assets/Scripts/Cat/CatAI.cs) | Added SetWanderBounds() for room switching |
 
 ---
 
-## Unity Editor Setup
+## 1. Milestone Popup Fix ✅
 
-### 1. CameraController (Pan + Zoom + Ground Tap)
+The popup no longer auto-hides. Add a close button:
 
-1. Select your **Main Camera** in the Hierarchy
-2. **Add Component** → `CameraController`
-3. Configure in Inspector:
+1. In your **MilestonePopup** panel, add a **Button** child → name it `MilestoneCloseBtn`
+2. Style: "✕" or "OK" text
+3. In HUDManager Inspector, assign `MilestoneCloseBtn` to the `Milestone Close Button` field
 
-| Field | Value | Notes |
+---
+
+## 2. Create Manager GameObjects
+
+In your **game scene**, create an empty GameObject called `Systems` and add these components:
+
+```
+📁 Systems (existing or new)
+├── 📜 PawCoinManager
+├── 📜 DailyTaskManager
+├── 📜 AchievementManager
+├── 📜 MiniGameManager
+└── 📜 RoomManager
+```
+
+Then in **GameManager** Inspector, assign the new references:
+
+| Field | Drag From |
+|---|---|
+| Paw Coin Manager | Systems → PawCoinManager |
+| Daily Task Manager | Systems → DailyTaskManager |
+| Achievement Manager | Systems → AchievementManager |
+| Room Manager | Systems → RoomManager |
+
+---
+
+## 3. RoomManager Setup
+
+Select the **RoomManager** component and configure:
+
+| Field | Value |
+|---|---|
+| Background Renderer | Your background SpriteRenderer |
+| Cat AI | Cat → CatAI component |
+| Rooms[0].roomId | `living_room` |
+| Rooms[0].roomName | `Living Room` |
+| Rooms[0].unlockCost | `0` |
+| Rooms[0].unlockedByDefault | ✅ |
+| Rooms[0].backgroundSprite | Your living room sprite |
+| Rooms[0].wanderBoundsMin | `(-7, -3)` |
+| Rooms[0].wanderBoundsMax | `(7, -1)` |
+| Rooms[1].roomId | `kitchen` |
+| Rooms[1].roomName | `Kitchen` |
+| Rooms[1].unlockCost | `500` |
+| Rooms[1].backgroundSprite | Your kitchen sprite |
+| Rooms[2].roomId | `bedroom` |
+| Rooms[2].roomName | `Bedroom` |
+| Rooms[2].unlockCost | `800` |
+| Rooms[2].backgroundSprite | Your bedroom sprite |
+
+---
+
+## 4. Room Switcher UI
+
+In your Canvas, add navigation buttons:
+
+```
+📁 Canvas
+└── 📁 RoomSwitcherUI (script)
+    ├── 🔘 LeftArrowBtn ← "◀"
+    ├── 📝 RoomNameText
+    └── 🔘 RightArrowBtn → "▶"
+```
+
+Position at the **top-center** of the screen. Assign references in Inspector.
+
+---
+
+## 5. Shop System Setup
+
+### Create the Shop Panel
+
+```
+📁 Canvas
+└── 📁 ShopPanel (hidden by default)
+    ├── 📜 ShopUI (script)
+    ├── 📝 CoinDisplay — "0 🐾"
+    ├── 🔘 TabRooms — "Rooms"
+    ├── 🔘 TabFurniture — "Furniture"
+    ├── 📁 ScrollView
+    │   └── 📁 Content (Vertical Layout Group + Content Size Fitter)
+    ├── 🔘 CloseButton — "✕"
+    └── 📁 ConfirmDialog (hidden by default)
+        ├── 📝 ConfirmText
+        ├── 🔘 ConfirmBuy — "Buy"
+        └── 🔘 ConfirmCancel — "Cancel"
+```
+
+### Create the Item Slot Prefab
+
+1. Create a UI element (Panel or Button) with:
+   - `Image` (icon), `TMP_Text` (name), `TMP_Text` (cost), `Button`, optional `CanvasGroup`
+   - A child "OwnedBadge" Image (✓ checkmark, hidden by default)
+2. Add the `ShopItemSlotUI` script
+3. Assign references, save as **Prefab** in `Assets/Prefabs/UI/`
+
+### Configure Shop Catalog
+
+In `ShopUI` Inspector, set the **Catalog** array with all items:
+
+| # | itemId | itemName | Cost | Category | catInteraction | targetRoomId |
+|---|--------|----------|------|----------|----------------|---|
+| 0 | `living_room` | Living Room | 0 | Room | None | — |
+| 1 | `kitchen` | Kitchen | 500 | Room | None | — |
+| 2 | `bedroom` | Bedroom | 800 | Room | None | — |
+| 3 | `cat_bed` | Cozy Cat Bed | 100 | Furniture | SleepOn | living_room |
+| 4 | `scratch_post` | Scratching Post | 80 | Furniture | Scratch | living_room |
+| 5 | `cardboard_box` | Cardboard Box | 50 | Furniture | HideIn | living_room |
+| 6 | `plush_cushion` | Plush Cushion | 120 | Furniture | SitOn | living_room |
+| 7 | `cat_tower` | Cat Tower | 250 | Furniture | PlayWith | living_room |
+| 8 | `kitchen_rug` | Kitchen Rug | 60 | Furniture | SitOn | kitchen |
+| 9 | `window_shelf` | Sunny Window Shelf | 150 | Furniture | SleepOn | kitchen |
+| 10 | `herb_plant` | Herb Plant | 70 | Furniture | Scratch | kitchen |
+| 11 | `fish_tank` | Fish Tank | 200 | Furniture | PlayWith | kitchen |
+| 12 | `fluffy_pillow` | Fluffy Pillow | 90 | Furniture | SleepOn | bedroom |
+| 13 | `yarn_basket` | Yarn Basket | 100 | Furniture | PlayWith | bedroom |
+| 14 | `bookshelf_perch` | Bookshelf Perch | 180 | Furniture | SitOn | bedroom |
+
+For each item, assign an **Icon** sprite and an **Item Sprite** (the actual furniture graphic).
+
+### Add a Shop Button to HUD
+
+Add a button on your HUD that calls `ShopUI.Open()`:
+```csharp
+[SerializeField] private ShopUI shopUI;
+[SerializeField] private Button shopButton;
+
+void Start() {
+    shopButton.onClick.AddListener(() => shopUI.Open());
+}
+```
+
+---
+
+## 6. Daily Tasks Panel
+
+```
+📁 Canvas
+└── 📁 DailyTaskPanel (hidden by default)
+    ├── 📜 DailyTaskUI (script)
+    ├── 📝 ProgressText — "Daily Tasks: 0/5"
+    ├── 📁 TaskSlot_Login
+    │   ├── 📝 NameText, 📝 RewardText, 🖼️ Checkmark
+    ├── 📁 TaskSlot_Feed
+    │   ├── 📝 NameText, 📝 RewardText, 🖼️ Checkmark
+    ├── 📁 TaskSlot_Water (same structure)
+    ├── 📁 TaskSlot_Pet (same structure)
+    ├── 📁 TaskSlot_Play (same structure)
+    └── 🔘 CloseButton
+```
+
+In `DailyTaskUI` Inspector:
+- Set **Task Slots** array size to 5
+- For each slot, set `Task Type` and assign the UI references
+
+Add a HUD button that calls `DailyTaskUI.Open()`.
+
+---
+
+## 7. Achievement UI
+
+### Popup (auto-shows on unlock)
+```
+📁 Canvas
+└── 📁 AchievementPopup (hidden by default)
+    ├── 📜 AchievementUI (script)
+    ├── 📝 PopupTitle — "🏆 First Touch"
+    ├── 📝 PopupDescription — "Pet the cat for the first time"
+    ├── 📝 PopupReward — "+25 🐾"
+    └── 🔘 PopupCloseButton
+```
+
+### List Panel (opened from HUD button)
+```
+📁 Canvas
+└── 📁 AchievementListPanel (hidden by default)
+    ├── 📝 ProgressText — "Achievements: 0/25"
+    ├── 📁 ScrollView → Content
+    └── 🔘 CloseButton
+```
+
+Create a **list item prefab** with 3 TMP_Text components (name, description, status) and an optional CanvasGroup.
+
+---
+
+## 8. Furniture Placement
+
+### Create Furniture Prefab
+
+1. Create an empty GameObject → name `FurniturePrefab`
+2. Add: `SpriteRenderer`, `BoxCollider2D`, `FurnitureInstance`
+3. Save as Prefab in `Assets/Prefabs/`
+
+### Placement UI
+```
+📁 Canvas
+└── 📁 FurniturePlacementPanel (hidden by default)
+    ├── 📜 FurniturePlacementUI (script)
+    ├── 📁 InventoryScrollView → Content
+    ├── 🔘 ConfirmButton (hidden initially)
+    ├── 🔘 CancelButton (hidden initially)
+    ├── 🔘 RemoveButton
+    └── 🔘 CloseButton
+```
+
+Assign:
+- **Furniture Prefab**: your created prefab
+- **Shop UI**: reference to ShopUI (for looking up item data)
+- **Inventory Slot Prefab**: a simple Button+Text prefab
+
+Add a "🪑 Decorate" HUD button that calls `FurniturePlacementUI.Open()`.
+
+---
+
+## 9. Cat Fishing Mini-Game
+
+### Create Fish Prefab
+
+1. Create an empty GameObject → name `FishPrefab`
+2. Add: `SpriteRenderer` (fish sprite), `CircleCollider2D` (radius ~0.4), `Fish`
+3. Save as Prefab
+
+### Mini-Game UI Setup
+```
+📁 Canvas
+└── 📁 MiniGamePanel (hidden by default, full-screen)
+    ├── 📜 CatFishingGame (script)
+    ├── 📝 ScoreText — "0"
+    ├── 📝 TimerText — "30s"
+    ├── 📝 InstructionText — "Tap fish to catch them!"
+    ├── 🔘 StartButton — "Start!"
+    ├── 🔘 CloseButton — "✕"
+    ├── 🖼️ CatPaw (optional, hidden by default)
+    └── 📁 GameOverPanel (hidden by default)
+        ├── 📝 FinalScoreText — "Score: 0"
+        ├── 📝 CoinsEarnedText — "+0 🐾"
+        ├── 🔘 PlayAgainButton — "Play Again"
+        └── 🔘 ExitButton — "Exit"
+```
+
+### FishSpawner Setup
+
+1. Add `FishSpawner` component to the same object as `CatFishingGame` (or a child)
+2. Configure:
+
+| Field | Value |
+|---|---|
+| Fish Prefab | FishPrefab |
+| Base Spawn Interval | 1.5 |
+| Min Spawn Interval | 0.4 |
+| Golden Chance | 0.1 |
+| Base Speed | 2 |
+| Max Speed | 5 |
+
+3. In `CatFishingGame`, assign `FishSpawner` and `MiniGameManager` references
+
+### Opening the Mini-Game
+
+Add a "🐟 Fish" HUD button that calls `CatFishingGame.Open()`.
+
+---
+
+## 10. HUD Buttons Summary
+
+Add these buttons to your existing HUD Canvas:
+
+| Button | Action | Position |
 |---|---|---|
-| Cam | (auto-detected) | |
-| Cat AI | Drag your Cat GameObject | Required for ground-tap calling |
-| Pan Min X / Pan Max X | `-5` / `5` | Adjust to your room width |
-| Drag Threshold | `15` | Pixels before a touch counts as drag vs tap |
-| Pan Sensitivity | `1` | |
-| Pet Zoom Size | `3` | Smaller = more zoomed in when petting |
-| Zoom Speed | `3` | How fast the zoom transitions |
-| Zoom Y Offset | `0.5` | Centers slightly above the cat |
+| 🛒 Shop | `ShopUI.Open()` | Bottom bar |
+| 📋 Tasks | `DailyTaskUI.Open()` | Bottom bar |
+| 🏆 Achievements | `AchievementUI.OpenList()` | Bottom bar |
+| 🪑 Decorate | `FurniturePlacementUI.Open()` | Bottom bar |
+| 🐟 Fish | `CatFishingGame.Open()` | Bottom bar |
+| 🐾 Coins | Display only | Top bar |
 
-**How it works:**
-- **Hand mode + drag on empty space** → Camera pans horizontally
-- **Hand mode + tap on empty space** → Cat walks to that spot
-- **Petting the cat** → Camera smoothly zooms in, zooms back out when done
+### Paw Coin Display on HUD
 
----
+Add a TMP_Text to your HUD and subscribe to coin changes:
 
-### 2. ToolModeManager (Hand / Feather Toggle Button)
+```csharp
+[SerializeField] private TextMeshProUGUI coinText;
 
-1. Create a **Canvas** if you don't have one:
-   - Hierarchy → Right-click → **UI → Canvas**
-   - Set Canvas Scaler to **Scale With Screen Size**, Reference Resolution `1080×1920`
-
-2. Create the toggle button:
-   - Right-click Canvas → **UI → Button**
-   - Rename to `ToolModeButton`
-   - Position it in the **bottom-right corner** (anchor bottom-right)
-   - Size: `80×80` or similar
-   - Remove the child `Text` object (we use icons instead)
-
-3. Create an **empty GameObject** in the scene (or on the Canvas):
-   - Rename to `ToolModeManager`
-   - **Add Component** → `ToolModeManager`
-   - Configure:
-
-| Field | Value |
-|---|---|
-| Toggle Button | Drag the `ToolModeButton` |
-| Button Icon | Drag the `Image` component on the button |
-| Hand Icon | Assign a hand sprite (create placeholder) |
-| Feather Icon | Assign a feather sprite (create placeholder) |
-
-**How it works:**
-- Tap the button → toggles between Hand 🖐️ and Feather 🪶
-- **Hand mode**: Tap cat = pet, tap ground = call cat, drag = pan camera
-- **Feather mode**: Touch/drag empty space = feather toy appears and cat chases it
+void Start() {
+    if (PawCoinManager.Instance != null)
+        PawCoinManager.Instance.OnCoinsChanged += (c) => coinText.text = $"{c} 🐾";
+}
+```
 
 ---
 
-### 3. NeedBubble (Thought Bubble Above Cat)
+## 11. Testing Tips
 
-1. Under your **Cat GameObject**, create a child:
-   - Right-click Cat → **Create Empty** → Rename to `NeedBubble`
-   - Position: `(0.8, 1.5, 0)` (above and to the right of the cat)
+> [!TIP]
+> **Quick test coins**: In Unity Play Mode, use the Console to add coins:
+> `PawCoinManager.Instance.AddCoins(1000, "debug");`
 
-2. Add a **SpriteRenderer** to `NeedBubble`:
-   - Assign your thought bubble background sprite
-   - Sorting Layer: same as cat, Order: above cat
+> [!TIP]
+> **Reset save data**: Call `SaveSystem.DeleteSave()` from any script or the Console to test fresh start flows.
 
-3. Create a child under `NeedBubble`:
-   - Right-click NeedBubble → **Create Empty** → Rename to `Icon`
-   - Add a **SpriteRenderer** to `Icon`
-   - This displays the need icon inside the bubble
-
-4. Add the `NeedBubble` script to the `NeedBubble` object:
-
-| Field | Value |
-|---|---|
-| Cat Needs | (auto-detected from parent) |
-| Bubble Renderer | The bubble background SpriteRenderer |
-| Icon Renderer | The Icon child's SpriteRenderer |
-| Hunger Icon | 🐟 Fish or food bowl sprite |
-| Thirst Icon | 💧 Water drop sprite |
-| Happiness Icon | 😢 Sad face sprite |
-| Cleanliness Icon | ✨ Sparkle or soap sprite |
-| Low Threshold | `30` (shows when need drops below this) |
-
-**Priority order**: Hunger > Thirst > Happiness > Cleanliness
-
-The bubble fades in/out smoothly and bobs gently when visible.
-
----
-
-### 4. CatAI — Updated Bowl References
+> [!WARNING]
+> **Build Settings**: If you have a MenuScene, both `MenuScene` and `SampleScene` must be in **File → Build Settings** for `SceneManager.LoadScene` to work.
 
 > [!IMPORTANT]
-> The bowl references in CatAI changed from **Transform** to **FoodBowl/WaterBowl scripts**. You need to re-assign them!
-
-1. Select your **Cat GameObject**
-2. In the `CatAI` component, find "Need-Driven Behavior":
-
-| Old Field | New Field | What to Drag |
-|---|---|---|
-| ~~Food Bowl Transform~~ | **Food Bowl** | Drag the FoodBowl **GameObject** (it will pick up the script) |
-| ~~Water Bowl Transform~~ | **Water Bowl** | Drag the WaterBowl **GameObject** |
-
-Now the cat **only walks to bowls when they contain food/water**, not when empty.
-
----
-
-### 5. DraggableToy — Feather Toy Setup
-
-The DraggableToy is already in your scene. Changes to note:
-
-- **Only active in FeatherToy mode** (automatically hides in Hand mode)
-- **Any touch on empty space** in FeatherToy mode moves the feather (no need to tap the toy's collider first)
-- While playing: **happiness ↑**, **hunger ↓**, **cleanliness ↓**
-
-Configure in Inspector:
-
-| Field | Default | Notes |
-|---|---|---|
-| Happiness Per Second | `5` | |
-| Hunger Drain Per Second | `1` | How fast hunger drops while playing |
-| Cleanliness Drain Per Second | `0.5` | How fast cleanliness drops while playing |
-
----
-
-### 6. Grooming Animation Setup
-
-The grooming system is fully scripted. What you need to create:
-
-**Sprite Art: Cat Grooming** (4-8 frames, ~3 seconds)
-
-| Frame | Description |
-|---|---|
-| 1 | Cat sitting, lifting paw |
-| 2 | Paw near face, starting to lick |
-| 3 | Licking paw |
-| 4 | Licking body/side |
-| 5 | Continue grooming |
-| 6 | Finishing, paw down |
-
-**In Unity:**
-1. Create animation clip `Cat_Grooming.anim` — **Loop Time: ❌ Off**
-2. In your Animator Controller:
-   - Add state `Grooming` → assign `Cat_Grooming` clip
-   - Add **Any State → Grooming** transition:
-     - Condition: `State` Equals `9`
-     - Has Exit Time: ❌ Off
-     - Can Transition To Self: ❌ Off
-     - Transition Duration: `0`
-
-3. In the `CatAnimator` component on your cat, set:
-   - **Grooming Duration** = match your clip length (e.g., `3.0`)
-
-**How it works at runtime:**
-```
-AI decides: "time to groom" (random chance during idle, higher when dirty)
-  → CatController enters Grooming state
-  → CatAnimator plays Cat_Grooming clip + starts 3s timer
-  → Timer fires → CatController gives +15 cleanliness → returns to Idle
-```
-
----
-
-## Complete Scene Hierarchy
-
-```
-📁 Scene
-├── 🎥 Main Camera
-│   └── 📜 CameraController
-├── 🐱 Cat
-│   ├── 📜 CatController
-│   ├── 📜 CatAI (bowl refs → FoodBowl & WaterBowl scripts)
-│   ├── 📜 CatNeeds
-│   ├── 📜 CatAnimator
-│   ├── 📜 CatInteraction
-│   └── 💭 NeedBubble (child)
-│       ├── SpriteRenderer (bubble background)
-│       ├── 📜 NeedBubble script
-│       └── 🖼️ Icon (child)
-│           └── SpriteRenderer (need icon)
-├── 🍽️ FoodBowl
-│   └── 📜 FoodBowl
-├── 💧 WaterBowl
-│   └── 📜 WaterBowl
-├── 🪶 FeatherToy
-│   └── 📜 DraggableToy
-├── ⚙️ GameManager
-│   ├── 📜 GameManager
-│   ├── 📜 TimeManager
-│   └── 📜 BondSystem
-├── 🖼️ Background
-│   └── SpriteRenderer
-└── 🖥️ Canvas (UI)
-    ├── ToolModeManager (script)
-    └── ToolModeButton (Button)
-        └── Image (hand/feather icon)
-```
-
----
-
-## Interaction Flow Diagram
-
-```mermaid
-graph TD
-    A["👆 Player Touches Screen"] --> B{What was hit?}
-    
-    B -->|Cat collider| C{Tool Mode?}
-    C -->|🖐️ Hand| D["Pet the cat\n(camera zooms in)"]
-    C -->|🪶 Feather| E["Nothing happens\n(feather doesn't pet)"]
-    
-    B -->|Bowl collider| F["Fill bowl\n(if empty)"]
-    
-    B -->|Empty space| G{Tool Mode?}
-    G -->|🖐️ Hand + Tap| H["Call cat to spot\n(cat walks over)"]
-    G -->|🖐️ Hand + Drag| I["Pan camera\n(horizontal only)"]
-    G -->|🪶 Feather| J["Move feather toy\n(cat chases it)"]
-    
-    B -->|Toggle button| K["Switch mode\n🖐️ ↔ 🪶"]
-```
+> **Existing save data**: Since GameData has new fields with defaults, existing saves will load fine — new `List<>` fields deserialize as empty lists, coins default to 0.

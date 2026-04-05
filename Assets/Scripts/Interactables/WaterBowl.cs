@@ -82,6 +82,14 @@ namespace CatRaising.Interactables
             if (BondSystem.Instance != null)
                 BondSystem.Instance.AddBond(bondPerWater, "watering");
 
+            // Daily task hook
+            if (DailyTaskManager.Instance != null)
+                DailyTaskManager.Instance.CheckTask(DailyTaskType.GiveWater);
+
+            // Achievement check
+            if (AchievementManager.Instance != null)
+                AchievementManager.Instance.CheckAll();
+
             if (fillEffectPrefab != null)
                 Instantiate(fillEffectPrefab, transform.position + Vector3.up * 0.5f, Quaternion.identity);
 

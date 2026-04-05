@@ -44,7 +44,7 @@ namespace CatRaising.UI
         [Header("Milestone Popup")]
         [SerializeField] private GameObject milestonePopup;
         [SerializeField] private TextMeshProUGUI milestoneText;
-        [SerializeField] private float milestonePopupDuration = 3f;
+        [SerializeField] private Button milestoneCloseButton;
 
         private void Start()
         {
@@ -67,6 +67,10 @@ namespace CatRaising.UI
             // Setup welcome back button
             if (welcomeBackButton != null)
                 welcomeBackButton.onClick.AddListener(HideWelcomeBack);
+
+            // Setup milestone close button
+            if (milestoneCloseButton != null)
+                milestoneCloseButton.onClick.AddListener(HideMilestonePopup);
         }
 
         private void Update()
@@ -205,14 +209,13 @@ namespace CatRaising.UI
         /// </summary>
         private void OnMilestoneReached(int index, string tierName)
         {
+            Debug.Log("called");
             if (milestonePopup == null) return;
 
             if (milestoneText != null)
-                milestoneText.text = $"You and {catNameText} are now\n{tierName}!";
+                milestoneText.text = $"You and {catNameText.text} are now\n{tierName}!";
 
             milestonePopup.SetActive(true);
-            CancelInvoke(nameof(HideMilestonePopup));
-            Invoke(nameof(HideMilestonePopup), milestonePopupDuration);
         }
 
         private void HideMilestonePopup()

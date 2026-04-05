@@ -184,6 +184,14 @@ namespace CatRaising.Interactables
                 if (GameManager.Instance != null && GameManager.Instance.Data != null)
                     GameManager.Instance.Data.totalPlays++;
 
+                // Daily task hook (requires 5s+ play, but we trigger at minPlayTime for responsiveness)
+                if (DailyTaskManager.Instance != null)
+                    DailyTaskManager.Instance.CheckTask(DailyTaskType.PlayFeather);
+
+                // Achievement check
+                if (AchievementManager.Instance != null)
+                    AchievementManager.Instance.CheckAll();
+
                 _sessionBondAwarded = true;
             }
         }
