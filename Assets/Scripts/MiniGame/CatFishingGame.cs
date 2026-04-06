@@ -121,9 +121,9 @@ namespace CatRaising.MiniGame
 
             if (gameOverPanel != null) gameOverPanel.SetActive(true);
             if (finalScoreText != null) finalScoreText.text = $"Score: {score}";
-            if (coinsEarnedText != null) coinsEarnedText.text = $"+{coins} 🐾";
+            if (coinsEarnedText != null) coinsEarnedText.text = $"+{coins}";
 
-            Debug.Log($"[CatFishing] Game over! Score: {score}, Earned: {coins} 🐾");
+            Debug.Log($"[CatFishing] Game over! Score: {score}, Earned: {coins}");
         }
 
         private void UpdateScore(int score)

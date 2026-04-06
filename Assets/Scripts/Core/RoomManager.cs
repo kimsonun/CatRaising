@@ -177,7 +177,7 @@ namespace CatRaising.Core
 
             if (PawCoinManager.Instance == null || !PawCoinManager.Instance.CanAfford(room.unlockCost))
             {
-                Debug.Log($"[RoomManager] Can't afford room '{roomId}' ({room.unlockCost} 🐾)");
+                Debug.Log($"[RoomManager] Can't afford room '{roomId}' ({room.unlockCost})");
                 return false;
             }
 
@@ -191,7 +191,7 @@ namespace CatRaising.Core
             if (AchievementManager.Instance != null)
                 AchievementManager.Instance.CheckAll();
 
-            Debug.Log($"[RoomManager] 🏠 Room unlocked: {room.roomName}!");
+            Debug.Log($"[RoomManager] Room unlocked: {room.roomName}!");
             return true;
         }
 

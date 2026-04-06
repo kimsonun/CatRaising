@@ -16,7 +16,7 @@ namespace CatRaising.UI
         [SerializeField] private TextMeshProUGUI popupDescription;
         [SerializeField] private TextMeshProUGUI popupReward;
         [SerializeField] private Button popupCloseButton;
-        [SerializeField] private float popupAutoHideTime = 5f;
+        [SerializeField] private float popupAutoHideTime = 4f;
 
         [Header("Achievement List Panel")]
         [SerializeField] private GameObject listPanel;
@@ -53,7 +53,7 @@ namespace CatRaising.UI
             if (popupTitle != null) popupTitle.text = $"🏆 {def.name}";
             if (popupDescription != null) popupDescription.text = def.description;
 
-            string reward = $"+{def.coinReward} 🐾";
+            string reward = $"+{def.coinReward}";
             if (def.bondReward > 0) reward += $"  +{def.bondReward} bond";
             if (popupReward != null) popupReward.text = reward;
 
@@ -109,7 +109,7 @@ namespace CatRaising.UI
                     if (texts.Length >= 1) texts[0].text = isUnlocked ? def.name : "???";
                     if (texts.Length >= 2) texts[1].text = isUnlocked ? def.description : "Locked";
                     if (texts.Length >= 3)
-                        texts[2].text = isUnlocked ? "✅ Unlocked" : $"{def.coinReward} 🐾";
+                        texts[2].text = isUnlocked ? "✅ Unlocked" : $"{def.coinReward}";
 
                     // Dim locked achievements
                     var cg = itemObj.GetComponent<CanvasGroup>();
@@ -118,7 +118,7 @@ namespace CatRaising.UI
             }
 
             if (progressText != null)
-                progressText.text = $"Achievements: {unlocked}/{allDefs.Length}";
+                progressText.text = $"{unlocked}/{allDefs.Length}";
         }
     }
 }

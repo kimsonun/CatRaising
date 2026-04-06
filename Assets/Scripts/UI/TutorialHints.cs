@@ -122,19 +122,19 @@ namespace CatRaising.UI
             if (!_hintsShown[(int)HintType.PetTheCat])
             {
                 ShowHint(HintType.PetTheCat,
-                    "🐾 Tap and hold your cat to pet it!",
+                    " Tap and hold your cat to pet it!",
                     "Your cat loves chin scratches. Try holding your tap on the cat!");
             }
             else if (!_hintsShown[(int)HintType.FeedTheCat] && catNeeds != null && catNeeds.Hunger < 70f)
             {
                 ShowHint(HintType.FeedTheCat,
-                    "🍖 Your cat is getting hungry!",
+                    " Your cat is getting hungry!",
                     "Tap the food bowl to fill it. Your cat will walk over and eat.");
             }
             else if (!_hintsShown[(int)HintType.WaterTheCat] && catNeeds != null && catNeeds.Thirst < 70f)
             {
                 ShowHint(HintType.WaterTheCat,
-                    "💧 Time for some water!",
+                    " Time for some water!",
                     "Tap the water bowl to fill it up.");
             }
             else if (!_hintsShown[(int)HintType.PlayWithToy])

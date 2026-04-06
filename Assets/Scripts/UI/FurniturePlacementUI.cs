@@ -92,7 +92,7 @@ namespace CatRaising.UI
             if (furniturePrefab != null)
             {
                 _ghostFurniture = Instantiate(furniturePrefab);
-                var sr = _ghostFurniture.GetComponent<SpriteRenderer>();
+                var sr = _ghostFurniture.GetComponentInChildren<SpriteRenderer>();
                 if (sr != null && item.itemSprite != null)
                 {
                     sr.sprite = item.itemSprite;
@@ -100,11 +100,11 @@ namespace CatRaising.UI
                 }
 
                 // Disable physics on ghost
-                var col = _ghostFurniture.GetComponent<Collider2D>();
+                var col = _ghostFurniture.GetComponentInChildren<Collider2D>();
                 if (col != null) col.enabled = false;
 
                 // Disable FurnitureInstance behavior on ghost
-                var fi = _ghostFurniture.GetComponent<FurnitureInstance>();
+                var fi = _ghostFurniture.GetComponentInChildren<FurnitureInstance>();
                 if (fi != null) fi.enabled = false;
             }
 
@@ -141,7 +141,7 @@ namespace CatRaising.UI
             // Check validity
             bool valid = IsValidPlacement(cell);
 
-            var sr = _ghostFurniture.GetComponent<SpriteRenderer>();
+            var sr = _ghostFurniture.GetComponentInChildren<SpriteRenderer>();
             if (sr != null)
                 sr.color = valid ? validColor : invalidColor;
 
@@ -218,13 +218,13 @@ namespace CatRaising.UI
                 GameManager.Instance.Data.placedFurniture.Add(saveData);
 
             // Convert ghost to placed furniture
-            var sr = _ghostFurniture.GetComponent<SpriteRenderer>();
+            var sr = _ghostFurniture.GetComponentInChildren<SpriteRenderer>();
             if (sr != null) sr.color = Color.white;
 
-            var col = _ghostFurniture.GetComponent<Collider2D>();
+            var col = _ghostFurniture.GetComponentInChildren<Collider2D>();
             if (col != null) col.enabled = true;
 
-            var fi = _ghostFurniture.GetComponent<FurnitureInstance>();
+            var fi = _ghostFurniture.GetComponentInChildren<FurnitureInstance>();
             if (fi != null)
             {
                 fi.enabled = true;
@@ -351,6 +351,7 @@ namespace CatRaising.UI
                 if (texts.Length >= 1) texts[0].text = item.itemName;
                 if (texts.Length >= 2) texts[1].text = placed ? "Placed" : "Tap to place";
 
+                Debug.Log(slotObj);
                 var btn = slotObj.GetComponent<Button>();
                 if (btn != null && !placed)
                 {

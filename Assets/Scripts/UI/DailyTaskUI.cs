@@ -85,7 +85,7 @@ namespace CatRaising.UI
                     slot.nameText.text = DailyTaskManager.Instance.GetTaskName(slot.taskType);
 
                 if (slot.rewardText != null)
-                    slot.rewardText.text = done ? "✓" : $"+{DailyTaskManager.Instance.GetReward(slot.taskType)} 🐾";
+                    slot.rewardText.text = done ? "✓" : $"+{DailyTaskManager.Instance.GetReward(slot.taskType)}";
 
                 if (slot.checkmark != null)
                     slot.checkmark.color = done ? slot.completedColor : slot.pendingColor;

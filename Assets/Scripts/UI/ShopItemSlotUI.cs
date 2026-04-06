@@ -27,7 +27,7 @@ namespace CatRaising.UI
 
             if (iconImage != null && item.icon != null) iconImage.sprite = item.icon;
             if (nameText != null) nameText.text = item.itemName;
-            if (costText != null) costText.text = $"{item.cost} 🐾";
+            if (costText != null) costText.text = $"{item.cost}";
 
             if (ownedBadge != null) ownedBadge.SetActive(owned);
 

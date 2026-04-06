@@ -92,7 +92,7 @@ namespace CatRaising.Systems
                 PawCoinManager.Instance.AddCoins(reward, $"daily:{taskType}");
 
             OnTaskCompleted?.Invoke(taskType);
-            Debug.Log($"[DailyTask] ✅ {taskType} complete! +{reward} 🐾");
+            Debug.Log($"[DailyTask] ✅ {taskType} complete! +{reward}");
 
             // Check if all complete
             if (data.AllDailyTasksComplete)

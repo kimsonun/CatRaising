@@ -98,7 +98,7 @@ namespace CatRaising.Systems
                 BondSystem.Instance.AddBond(def.bondReward, $"achievement:{def.name}");
 
             OnAchievementUnlocked?.Invoke(def);
-            Debug.Log($"[Achievement] 🏆 Unlocked: {def.name} (+{def.coinReward}🐾)");
+            Debug.Log($"[Achievement] 🏆 Unlocked: {def.name} (+{def.coinReward})");
         }
 
         /// <summary>

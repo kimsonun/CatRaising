@@ -132,7 +132,7 @@ namespace CatRaising.UI
             {
                 confirmDialog.SetActive(true);
                 if (confirmText != null)
-                    confirmText.text = $"Buy {item.itemName}\nfor {item.cost} 🐾?";
+                    confirmText.text = $"Buy {item.itemName}\nfor {item.cost} ?";
             }
         }
 
@@ -190,7 +190,7 @@ namespace CatRaising.UI
         private void UpdateCoinDisplay(int coins)
         {
             if (coinDisplay != null)
-                coinDisplay.text = $"{coins} 🐾";
+                coinDisplay.text = $"{coins}";
         }
 
         /// <summary>

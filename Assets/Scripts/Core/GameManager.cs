@@ -56,11 +56,15 @@ namespace CatRaising.Core
         private void Start()
         {
             LoadGame();
-            //SaveSystem.DeleteSave(); // TEMP: Clear save for testing purposes
+            
         }
 
         private void Update()
         {
+            if (Input.GetKeyDown(KeyCode.M))
+            {
+                SaveSystem.DeleteSave(); // TEMP: Clear save for testing purposes
+            }
             if (Data == null || Data.isFirstLaunch) return;
 
             // Track play time
