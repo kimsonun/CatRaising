@@ -1,350 +1,231 @@
-# Milestone 3: Home & Decoration — Setup Walkthrough
+# UI Polish & System Rework — Setup Walkthrough
 
-## Files Created/Modified Summary
+## Summary of Changes
 
-### New Files (18)
-| File | Purpose |
-|---|---|
-| [PawCoinManager.cs](file:///d:/Project/CatRaising/Assets/Scripts/Systems/PawCoinManager.cs) | Currency singleton |
-| [DailyTaskManager.cs](file:///d:/Project/CatRaising/Assets/Scripts/Systems/DailyTaskManager.cs) | 5 daily tasks with reset |
-| [AchievementManager.cs](file:///d:/Project/CatRaising/Assets/Scripts/Systems/AchievementManager.cs) | 25 achievements |
-| [RoomManager.cs](file:///d:/Project/CatRaising/Assets/Scripts/Core/RoomManager.cs) | 3-room switching |
-| [FurnitureInstance.cs](file:///d:/Project/CatRaising/Assets/Scripts/Interactables/FurnitureInstance.cs) | Placed furniture behavior |
-| [ShopUI.cs](file:///d:/Project/CatRaising/Assets/Scripts/UI/ShopUI.cs) | Shop panel with catalog |
-| [ShopItemSlotUI.cs](file:///d:/Project/CatRaising/Assets/Scripts/UI/ShopItemSlotUI.cs) | Shop item card |
-| [RoomSwitcherUI.cs](file:///d:/Project/CatRaising/Assets/Scripts/UI/RoomSwitcherUI.cs) | Room navigation arrows |
-| [DailyTaskUI.cs](file:///d:/Project/CatRaising/Assets/Scripts/UI/DailyTaskUI.cs) | Task checklist panel |
-| [AchievementUI.cs](file:///d:/Project/CatRaising/Assets/Scripts/UI/AchievementUI.cs) | Achievement popup + list |
-| [FurniturePlacementUI.cs](file:///d:/Project/CatRaising/Assets/Scripts/UI/FurniturePlacementUI.cs) | Furniture drag-to-place |
-| [MiniGameManager.cs](file:///d:/Project/CatRaising/Assets/Scripts/MiniGame/MiniGameManager.cs) | Mini-game framework |
-| [Fish.cs](file:///d:/Project/CatRaising/Assets/Scripts/MiniGame/Fish.cs) | Fish entity |
-| [FishSpawner.cs](file:///d:/Project/CatRaising/Assets/Scripts/MiniGame/FishSpawner.cs) | Fish spawning |
-| [CatFishingGame.cs](file:///d:/Project/CatRaising/Assets/Scripts/MiniGame/CatFishingGame.cs) | Fishing game UI |
-
-### Modified Files (8)
-| File | Changes |
-|---|---|
-| [PublicEnum.cs](file:///d:/Project/CatRaising/Assets/Scripts/Misc/PublicEnum.cs) | Added DailyTaskType, ShopCategory, FurnitureInteractionType, AchievementId |
-| [GameData.cs](file:///d:/Project/CatRaising/Assets/Scripts/Data/GameData.cs) | Added coins, rooms, furniture, tasks, achievements fields |
-| [GameManager.cs](file:///d:/Project/CatRaising/Assets/Scripts/Core/GameManager.cs) | Wired all new systems to save/load |
-| [HUDManager.cs](file:///d:/Project/CatRaising/Assets/Scripts/UI/HUDManager.cs) | Milestone popup → close button |
-| [FoodBowl.cs](file:///d:/Project/CatRaising/Assets/Scripts/Interactables/FoodBowl.cs) | Daily task + achievement hooks |
-| [WaterBowl.cs](file:///d:/Project/CatRaising/Assets/Scripts/Interactables/WaterBowl.cs) | Daily task + achievement hooks |
-| [CatInteraction.cs](file:///d:/Project/CatRaising/Assets/Scripts/Cat/CatInteraction.cs) | Daily task hook |
-| [DraggableToy.cs](file:///d:/Project/CatRaising/Assets/Scripts/Interactables/DraggableToy.cs) | Daily task + achievement hooks |
-| [CatAI.cs](file:///d:/Project/CatRaising/Assets/Scripts/Cat/CatAI.cs) | Added SetWanderBounds() for room switching |
-
----
-
-## 1. Milestone Popup Fix ✅
-
-The popup no longer auto-hides. Add a close button:
-
-1. In your **MilestonePopup** panel, add a **Button** child → name it `MilestoneCloseBtn`
-2. Style: "✕" or "OK" text
-3. In HUDManager Inspector, assign `MilestoneCloseBtn` to the `Milestone Close Button` field
-
----
-
-## 2. Create Manager GameObjects
-
-In your **game scene**, create an empty GameObject called `Systems` and add these components:
-
-```
-📁 Systems (existing or new)
-├── 📜 PawCoinManager
-├── 📜 DailyTaskManager
-├── 📜 AchievementManager
-├── 📜 MiniGameManager
-└── 📜 RoomManager
-```
-
-Then in **GameManager** Inspector, assign the new references:
-
-| Field | Drag From |
-|---|---|
-| Paw Coin Manager | Systems → PawCoinManager |
-| Daily Task Manager | Systems → DailyTaskManager |
-| Achievement Manager | Systems → AchievementManager |
-| Room Manager | Systems → RoomManager |
-
----
-
-## 3. RoomManager Setup
-
-Select the **RoomManager** component and configure:
-
-| Field | Value |
-|---|---|
-| Background Renderer | Your background SpriteRenderer |
-| Cat AI | Cat → CatAI component |
-| Rooms[0].roomId | `living_room` |
-| Rooms[0].roomName | `Living Room` |
-| Rooms[0].unlockCost | `0` |
-| Rooms[0].unlockedByDefault | ✅ |
-| Rooms[0].backgroundSprite | Your living room sprite |
-| Rooms[0].wanderBoundsMin | `(-7, -3)` |
-| Rooms[0].wanderBoundsMax | `(7, -1)` |
-| Rooms[1].roomId | `kitchen` |
-| Rooms[1].roomName | `Kitchen` |
-| Rooms[1].unlockCost | `500` |
-| Rooms[1].backgroundSprite | Your kitchen sprite |
-| Rooms[2].roomId | `bedroom` |
-| Rooms[2].roomName | `Bedroom` |
-| Rooms[2].unlockCost | `800` |
-| Rooms[2].backgroundSprite | Your bedroom sprite |
-
----
-
-## 4. Room Switcher UI
-
-In your Canvas, add navigation buttons:
-
-```
-📁 Canvas
-└── 📁 RoomSwitcherUI (script)
-    ├── 🔘 LeftArrowBtn ← "◀"
-    ├── 📝 RoomNameText
-    └── 🔘 RightArrowBtn → "▶"
-```
-
-Position at the **top-center** of the screen. Assign references in Inspector.
-
----
-
-## 5. Shop System Setup
-
-### Create the Shop Panel
-
-```
-📁 Canvas
-└── 📁 ShopPanel (hidden by default)
-    ├── 📜 ShopUI (script)
-    ├── 📝 CoinDisplay — "0 🐾"
-    ├── 🔘 TabRooms — "Rooms"
-    ├── 🔘 TabFurniture — "Furniture"
-    ├── 📁 ScrollView
-    │   └── 📁 Content (Vertical Layout Group + Content Size Fitter)
-    ├── 🔘 CloseButton — "✕"
-    └── 📁 ConfirmDialog (hidden by default)
-        ├── 📝 ConfirmText
-        ├── 🔘 ConfirmBuy — "Buy"
-        └── 🔘 ConfirmCancel — "Cancel"
-```
-
-### Create the Item Slot Prefab
-
-1. Create a UI element (Panel or Button) with:
-   - `Image` (icon), `TMP_Text` (name), `TMP_Text` (cost), `Button`, optional `CanvasGroup`
-   - A child "OwnedBadge" Image (✓ checkmark, hidden by default)
-2. Add the `ShopItemSlotUI` script
-3. Assign references, save as **Prefab** in `Assets/Prefabs/UI/`
-
-### Configure Shop Catalog
-
-In `ShopUI` Inspector, set the **Catalog** array with all items:
-
-| # | itemId | itemName | Cost | Category | catInteraction | targetRoomId |
-|---|--------|----------|------|----------|----------------|---|
-| 0 | `living_room` | Living Room | 0 | Room | None | — |
-| 1 | `kitchen` | Kitchen | 500 | Room | None | — |
-| 2 | `bedroom` | Bedroom | 800 | Room | None | — |
-| 3 | `cat_bed` | Cozy Cat Bed | 100 | Furniture | SleepOn | living_room |
-| 4 | `scratch_post` | Scratching Post | 80 | Furniture | Scratch | living_room |
-| 5 | `cardboard_box` | Cardboard Box | 50 | Furniture | HideIn | living_room |
-| 6 | `plush_cushion` | Plush Cushion | 120 | Furniture | SitOn | living_room |
-| 7 | `cat_tower` | Cat Tower | 250 | Furniture | PlayWith | living_room |
-| 8 | `kitchen_rug` | Kitchen Rug | 60 | Furniture | SitOn | kitchen |
-| 9 | `window_shelf` | Sunny Window Shelf | 150 | Furniture | SleepOn | kitchen |
-| 10 | `herb_plant` | Herb Plant | 70 | Furniture | Scratch | kitchen |
-| 11 | `fish_tank` | Fish Tank | 200 | Furniture | PlayWith | kitchen |
-| 12 | `fluffy_pillow` | Fluffy Pillow | 90 | Furniture | SleepOn | bedroom |
-| 13 | `yarn_basket` | Yarn Basket | 100 | Furniture | PlayWith | bedroom |
-| 14 | `bookshelf_perch` | Bookshelf Perch | 180 | Furniture | SitOn | bedroom |
-
-For each item, assign an **Icon** sprite and an **Item Sprite** (the actual furniture graphic).
-
-### Add a Shop Button to HUD
-
-Add a button on your HUD that calls `ShopUI.Open()`:
-```csharp
-[SerializeField] private ShopUI shopUI;
-[SerializeField] private Button shopButton;
-
-void Start() {
-    shopButton.onClick.AddListener(() => shopUI.Open());
-}
-```
-
----
-
-## 6. Daily Tasks Panel
-
-```
-📁 Canvas
-└── 📁 DailyTaskPanel (hidden by default)
-    ├── 📜 DailyTaskUI (script)
-    ├── 📝 ProgressText — "Daily Tasks: 0/5"
-    ├── 📁 TaskSlot_Login
-    │   ├── 📝 NameText, 📝 RewardText, 🖼️ Checkmark
-    ├── 📁 TaskSlot_Feed
-    │   ├── 📝 NameText, 📝 RewardText, 🖼️ Checkmark
-    ├── 📁 TaskSlot_Water (same structure)
-    ├── 📁 TaskSlot_Pet (same structure)
-    ├── 📁 TaskSlot_Play (same structure)
-    └── 🔘 CloseButton
-```
-
-In `DailyTaskUI` Inspector:
-- Set **Task Slots** array size to 5
-- For each slot, set `Task Type` and assign the UI references
-
-Add a HUD button that calls `DailyTaskUI.Open()`.
-
----
-
-## 7. Achievement UI
-
-### Popup (auto-shows on unlock)
-```
-📁 Canvas
-└── 📁 AchievementPopup (hidden by default)
-    ├── 📜 AchievementUI (script)
-    ├── 📝 PopupTitle — "🏆 First Touch"
-    ├── 📝 PopupDescription — "Pet the cat for the first time"
-    ├── 📝 PopupReward — "+25 🐾"
-    └── 🔘 PopupCloseButton
-```
-
-### List Panel (opened from HUD button)
-```
-📁 Canvas
-└── 📁 AchievementListPanel (hidden by default)
-    ├── 📝 ProgressText — "Achievements: 0/25"
-    ├── 📁 ScrollView → Content
-    └── 🔘 CloseButton
-```
-
-Create a **list item prefab** with 3 TMP_Text components (name, description, status) and an optional CanvasGroup.
-
----
-
-## 8. Furniture Placement
-
-### Create Furniture Prefab
-
-1. Create an empty GameObject → name `FurniturePrefab`
-2. Add: `SpriteRenderer`, `BoxCollider2D`, `FurnitureInstance`
-3. Save as Prefab in `Assets/Prefabs/`
-
-### Placement UI
-```
-📁 Canvas
-└── 📁 FurniturePlacementPanel (hidden by default)
-    ├── 📜 FurniturePlacementUI (script)
-    ├── 📁 InventoryScrollView → Content
-    ├── 🔘 ConfirmButton (hidden initially)
-    ├── 🔘 CancelButton (hidden initially)
-    ├── 🔘 RemoveButton
-    └── 🔘 CloseButton
-```
-
-Assign:
-- **Furniture Prefab**: your created prefab
-- **Shop UI**: reference to ShopUI (for looking up item data)
-- **Inventory Slot Prefab**: a simple Button+Text prefab
-
-Add a "🪑 Decorate" HUD button that calls `FurniturePlacementUI.Open()`.
-
----
-
-## 9. Cat Fishing Mini-Game
-
-### Create Fish Prefab
-
-1. Create an empty GameObject → name `FishPrefab`
-2. Add: `SpriteRenderer` (fish sprite), `CircleCollider2D` (radius ~0.4), `Fish`
-3. Save as Prefab
-
-### Mini-Game UI Setup
-```
-📁 Canvas
-└── 📁 MiniGamePanel (hidden by default, full-screen)
-    ├── 📜 CatFishingGame (script)
-    ├── 📝 ScoreText — "0"
-    ├── 📝 TimerText — "30s"
-    ├── 📝 InstructionText — "Tap fish to catch them!"
-    ├── 🔘 StartButton — "Start!"
-    ├── 🔘 CloseButton — "✕"
-    ├── 🖼️ CatPaw (optional, hidden by default)
-    └── 📁 GameOverPanel (hidden by default)
-        ├── 📝 FinalScoreText — "Score: 0"
-        ├── 📝 CoinsEarnedText — "+0 🐾"
-        ├── 🔘 PlayAgainButton — "Play Again"
-        └── 🔘 ExitButton — "Exit"
-```
-
-### FishSpawner Setup
-
-1. Add `FishSpawner` component to the same object as `CatFishingGame` (or a child)
-2. Configure:
-
-| Field | Value |
-|---|---|
-| Fish Prefab | FishPrefab |
-| Base Spawn Interval | 1.5 |
-| Min Spawn Interval | 0.4 |
-| Golden Chance | 0.1 |
-| Base Speed | 2 |
-| Max Speed | 5 |
-
-3. In `CatFishingGame`, assign `FishSpawner` and `MiniGameManager` references
-
-### Opening the Mini-Game
-
-Add a "🐟 Fish" HUD button that calls `CatFishingGame.Open()`.
-
----
-
-## 10. HUD Buttons Summary
-
-Add these buttons to your existing HUD Canvas:
-
-| Button | Action | Position |
+| # | Change | Files Modified/Created |
 |---|---|---|
-| 🛒 Shop | `ShopUI.Open()` | Bottom bar |
-| 📋 Tasks | `DailyTaskUI.Open()` | Bottom bar |
-| 🏆 Achievements | `AchievementUI.OpenList()` | Bottom bar |
-| 🪑 Decorate | `FurniturePlacementUI.Open()` | Bottom bar |
-| 🐟 Fish | `CatFishingGame.Open()` | Bottom bar |
-| 🐾 Coins | Display only | Top bar |
-
-### Paw Coin Display on HUD
-
-Add a TMP_Text to your HUD and subscribe to coin changes:
-
-```csharp
-[SerializeField] private TextMeshProUGUI coinText;
-
-void Start() {
-    if (PawCoinManager.Instance != null)
-        PawCoinManager.Instance.OnCoinsChanged += (c) => coinText.text = $"{c} 🐾";
-}
-```
+| 1 | Room selection panel + fade transition | `RoomSwitcherUI.cs` (rewritten), `ScreenFader.cs` (new) |
+| 2 | Food/water bowls as grid furniture | `FoodBowl.cs`, `WaterBowl.cs`, `CatAI.cs` |
+| 3 | Claim buttons for tasks & achievements | `DailyTaskManager.cs`, `DailyTaskUI.cs`, `AchievementManager.cs`, `AchievementUI.cs`, `GameData.cs` |
+| 4 | Grid layout (4 items/row) for shop & inventory | *(Unity Editor change — see instructions below)* |
+| 5 | Click-to-lock furniture placement | `FurniturePlacementUI.cs` (rewritten) |
+| 6 | Fishing mini-game as UI overlay | `CatFishingGame.cs` (rewritten), `FishUI.cs` (new), `FishSpawner.cs` (rewritten) |
 
 ---
 
-## 11. Testing Tips
+## 1. Room Selection Panel + Fade Transition
 
-> [!TIP]
-> **Quick test coins**: In Unity Play Mode, use the Console to add coins:
-> `PawCoinManager.Instance.AddCoins(1000, "debug");`
+### ScreenFader Setup
+1. In Canvas, create an **Image** named "ScreenFade"
+   - Color: **black** (0, 0, 0, 0) — starts transparent
+   - Stretch to fill entire screen
+   - Raycast Target: **off** (script manages this)
+   - Set **Sibling Order** to last (renders on top)
+2. Create a **ScreenFader** GameObject → add `ScreenFader` component
+3. Assign the black Image to `Fade Image`
 
-> [!TIP]
-> **Reset save data**: Call `SaveSystem.DeleteSave()` from any script or the Console to test fresh start flows.
+### Room Selector Panel
+Replace the old left/right arrows with:
+```
+📁 Canvas
+└── 📁 RoomSelectionPanel (hidden by default)
+    ├── 📜 RoomSwitcherUI (script)
+    ├── 📝 Title — "Select Room"
+    ├── 📁 ScrollView → Content (VerticalLayoutGroup)
+    └── 🔘 CloseButton — "✕"
+```
 
-> [!WARNING]
-> **Build Settings**: If you have a MenuScene, both `MenuScene` and `SampleScene` must be in **File → Build Settings** for `SceneManager.LoadScene` to work.
+**Room Slot Prefab**: Create a Button with:
+- `TMP_Text[0]` — room name
+- `TMP_Text[1]` — status ("Current" / "Go" / "🔒 500 🐾")
+- Optional `CanvasGroup` for dimming locked/current rooms
+
+Add a **"🏠 Rooms"** HUD button that calls `RoomSwitcherUI.Open()`.
+
+---
+
+## 2. Food & Water Bowls as Grid Furniture
+
+In the Inspector for **FoodBowl** and **WaterBowl**:
+
+| Field | Value |
+|---|---|
+| Grid Position | The iso grid cell where the bowl sits (e.g. `(2, 3)`) |
+| Grid Size | `(1, 1)` — bowls occupy 1 tile |
 
 > [!IMPORTANT]
-> **Existing save data**: Since GameData has new fields with defaults, existing saves will load fine — new `List<>` fields deserialize as empty lists, coins default to 0.
+> **Position the bowl GameObject** so its world position matches `IsometricGrid.GridToWorld(gridPosition)`. The bowl registers itself on the grid at Start and releases on Destroy.
+
+The **cat walks to the nearest walkable tile adjacent to the bowl** to eat/drink — it no longer walks directly onto the bowl's tile.
+
+---
+
+## 3. Claim System for Daily Tasks & Achievements
+
+### Daily Tasks — Claim Flow
+Tasks are now **completed** by game actions but **rewards require pressing "Claim"**.
+
+**Task Slot Prefab** needs:
+- `nameText` (TMP) — task name
+- `rewardText` (TMP) — "+20 🐾"
+- `claimButton` (Button) — the interactable Claim/Claimed button
+- `claimButtonText` (TMP) — on the button, shows "Claim", "Claimed", or "..."
+- `checkmark` (Image) — color changes by state
+
+### Achievements — Claim Flow
+Achievement popup still appears when unlocked, but **rewards are only given after claiming** from the achievements list.
+
+**List Item Prefab** needs:
+- 3x `TMP_Text` — name, description, reward/status
+- 1x `Button` — Claim button (shows "Claim", "Claimed", or "Locked")
+- Optional `CanvasGroup` — for dimming locked items
+
+### Red Dot Notifications
+Both `DailyTaskUI` and `AchievementUI` have a **`hudRedDot`** field:
+- Create a small red circle Image (10-15px) on the corner of the HUD button
+- Assign it to the `hudRedDot` field
+- It auto-shows when there are unclaimed rewards
+
+```
+📁 HUD
+├── 🔘 TasksButton
+│   └── 🔴 RedDot (Image, 12x12, red circle)
+├── 🔘 AchievementsButton
+│   └── 🔴 RedDot (Image, 12x12, red circle)
+```
+
+---
+
+## 4. Grid Layout for Shop & Inventory (4 per row)
+
+This is a **Unity Editor change** — replace `HorizontalLayoutGroup` with `GridLayoutGroup`:
+
+### Shop Panel Content
+1. Select the **ScrollView → Content** under ShopPanel
+2. **Remove** `HorizontalLayoutGroup`
+3. **Add** `GridLayoutGroup` with:
+
+| Setting | Value |
+|---|---|
+| Cell Size | `(150, 180)` — adjust to your item card size |
+| Spacing | `(10, 10)` |
+| Start Corner | Upper Left |
+| Start Axis | Horizontal |
+| Constraint | Fixed Column Count |
+| Constraint Count | `4` |
+
+4. Make sure the Content also has `ContentSizeFitter`:
+   - Vertical Fit: **Preferred Size**
+
+### Inventory Panel Content (Furniture Placement)
+Same steps on the **inventoryContent** ScrollView Content:
+- `GridLayoutGroup` with ConstraintCount = `4`
+- `ContentSizeFitter` with Vertical Fit = Preferred Size
+
+---
+
+## 5. Click-to-Lock Furniture Placement
+
+New 3-state flow:
+
+```
+┌────────────┐    click valid    ┌────────────┐    Confirm     ┌────────────┐
+│  Following  │ ──── tile ────→  │   Locked    │ ───────────→  │   Placed   │
+│ (ghost      │                  │ (ghost      │               │ (real      │
+│  tracks     │                  │  stays      │    Cancel     │  furniture)|
+│  cursor)    │ ←── Cancel ────  │  in place)  │ ───────────→  │            │
+└────────────┘                   └────────────┘               └────────────┘
+```
+
+- **Following**: Ghost snaps to isometric grid tiles as cursor moves. Grid highlights show valid/invalid.
+- **Click valid tile**: Ghost **locks** at that position. Color changes to `lockedColor`. Confirm button appears.
+- **Confirm**: Places furniture permanently. **Cancel**: Destroys ghost, back to inventory.
+
+> [!TIP]
+> The ghost **does not follow the mouse** when hovering over UI buttons. Only clicks on grid tiles (not over UI) trigger the lock.
+
+---
+
+## 6. Fishing Mini-Game as UI Overlay
+
+### Old vs New
+
+| Aspect | Before | After |
+|---|---|---|
+| Fish rendering | World-space SpriteRenderer | UI Image (Canvas) |
+| Tap detection | Physics2D.OverlapPoint | IPointerClickHandler (UI) |
+| Spawning area | World coordinates | RectTransform |
+| Cat interaction | Still active | **Disabled** while playing |
+
+### FishUI Prefab Setup
+1. Create a UI element (Image) → name "FishUI"
+2. Add components: `Image`, `Button`, `FishUI`
+3. Size: ~60×30 (adjust to your fish art)
+4. **Save as Prefab**
+
+### Mini-Game Panel Setup
+```
+📁 Canvas
+└── 📁 MiniGamePanel (hidden, full-screen overlay)
+    ├── 📜 CatFishingGame (script)
+    ├── 📁 FishArea (stretch to fill, this is where fish swim)
+    │   └── 📜 FishSpawner (script)
+    ├── 📝 ScoreText — "0"
+    ├── 📝 TimerText — "30s"
+    ├── 📝 InstructionText
+    ├── 🔘 StartButton — "Start!"
+    ├── 🔘 CloseButton — "✕"
+    ├── 🖼️ CatPawUI (RectTransform, hidden by default)
+    └── 📁 GameOverPanel (hidden)
+        ├── 📝 FinalScoreText
+        ├── 📝 CoinsEarnedText
+        ├── 🔘 PlayAgainButton
+        └── 🔘 ExitButton
+```
+
+### FishSpawner Configuration
+
+| Field | Value |
+|---|---|
+| Fish UI Prefab | Your FishUI prefab |
+| Fish Area | The "FishArea" RectTransform |
+| Normal Fish Sprite | Your fish sprite |
+| Golden Fish Sprite | Your golden fish sprite |
+| Base Speed | 250 (pixels/sec) |
+| Max Speed | 500 (pixels/sec) |
+
+> [!WARNING]
+> The old `Fish.cs` (world-space) is now unused. You can delete it and its prefab. The new `FishUI.cs` replaces it entirely.
+
+### Interaction Blocking
+When the mini-game opens, it **automatically disables** `CatInteraction` and `CatAI` so the player can focus on fishing without accidentally petting the cat or tapping the ground.
+
+---
+
+## Files Reference
+
+### New Files
+| File | Purpose |
+|---|---|
+| [ScreenFader.cs](file:///d:/Project/CatRaising/Assets/Scripts/Core/ScreenFader.cs) | Fade-to-black transition |
+| [FishUI.cs](file:///d:/Project/CatRaising/Assets/Scripts/MiniGame/FishUI.cs) | UI-based fish entity |
+
+### Rewritten Files
+| File | Key Change |
+|---|---|
+| [RoomSwitcherUI.cs](file:///d:/Project/CatRaising/Assets/Scripts/UI/RoomSwitcherUI.cs) | Selection panel instead of arrows |
+| [DailyTaskManager.cs](file:///d:/Project/CatRaising/Assets/Scripts/Systems/DailyTaskManager.cs) | Separate complete from claim |
+| [DailyTaskUI.cs](file:///d:/Project/CatRaising/Assets/Scripts/UI/DailyTaskUI.cs) | Claim buttons + red dot |
+| [AchievementManager.cs](file:///d:/Project/CatRaising/Assets/Scripts/Systems/AchievementManager.cs) | Separate unlock from claim |
+| [AchievementUI.cs](file:///d:/Project/CatRaising/Assets/Scripts/UI/AchievementUI.cs) | Claim buttons + red dot |
+| [FurniturePlacementUI.cs](file:///d:/Project/CatRaising/Assets/Scripts/UI/FurniturePlacementUI.cs) | Click-to-lock flow |
+| [CatFishingGame.cs](file:///d:/Project/CatRaising/Assets/Scripts/MiniGame/CatFishingGame.cs) | UI overlay + disable cat |
+| [FishSpawner.cs](file:///d:/Project/CatRaising/Assets/Scripts/MiniGame/FishSpawner.cs) | Spawns UI fish |
+
+### Modified Files
+| File | Key Change |
+|---|---|
+| [GameData.cs](file:///d:/Project/CatRaising/Assets/Scripts/Data/GameData.cs) | Added claimed states for tasks/achievements |
+| [FoodBowl.cs](file:///d:/Project/CatRaising/Assets/Scripts/Interactables/FoodBowl.cs) | Grid position + adjacent walkable |
+| [WaterBowl.cs](file:///d:/Project/CatRaising/Assets/Scripts/Interactables/WaterBowl.cs) | Grid position + adjacent walkable |
+| [CatAI.cs](file:///d:/Project/CatRaising/Assets/Scripts/Cat/CatAI.cs) | Uses `GetAdjacentWalkablePosition()` for bowls |

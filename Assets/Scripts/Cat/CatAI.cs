@@ -260,7 +260,7 @@ namespace CatRaising.Cat
         private void GoToFoodBowl()
         {
             if (foodBowl == null) return;
-            _wanderTarget = foodBowl.transform.position + Vector3.left * 0.5f;
+            _wanderTarget = foodBowl.GetAdjacentWalkablePosition();
             _isMovingToTarget = true;
             _currentStateDuration = 20f;
             _playerCalledCat = false;
@@ -271,7 +271,7 @@ namespace CatRaising.Cat
         private void GoToWaterBowl()
         {
             if (waterBowl == null) return;
-            _wanderTarget = waterBowl.transform.position + Vector3.left * 0.5f;
+            _wanderTarget = waterBowl.GetAdjacentWalkablePosition();
             _isMovingToTarget = true;
             _currentStateDuration = 20f;
             _playerCalledCat = false;

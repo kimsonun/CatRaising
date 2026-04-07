@@ -69,12 +69,20 @@ namespace CatRaising.Data
         public bool dailyPet = false;
         public bool dailyPlay = false;
 
+        // ─── Daily Task Claimed States ──────────────────────────
+        public bool dailyLoginClaimed = false;
+        public bool dailyFeedClaimed = false;
+        public bool dailyWaterClaimed = false;
+        public bool dailyPetClaimed = false;
+        public bool dailyPlayClaimed = false;
+
         // ─── Milestone 3: Daily Streak ──────────────────────────
         public int dailyStreakDays = 0;
         public string lastDailyCompleteDate = "";
 
         // ─── Milestone 3: Achievements ──────────────────────────
         public List<string> unlockedAchievementIds = new List<string>();
+        public List<string> claimedAchievementIds = new List<string>();
 
         // ─── Milestone 3: Mini-Game ─────────────────────────────
         public int bestFishingScore = 0;

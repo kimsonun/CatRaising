@@ -1,60 +1,125 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using CatRaising.Core;
+using CatRaising.Systems;
 
 namespace CatRaising.UI
 {
     /// <summary>
-    /// Left/right arrows to cycle between unlocked rooms.
-    /// Shows current room name.
+    /// Room selection panel. Shows all rooms with current/locked/unlocked states.
+    /// Switching rooms triggers a black fade transition.
+    /// 
+    /// SETUP:
+    /// 1. Create a Panel "RoomSelectionPanel" under Canvas
+    /// 2. Add a ScrollView or vertical layout for room buttons
+    /// 3. Create a room button prefab (RoomSlot) with: room name text, status text, Button
+    /// 4. Add a close button and a HUD button to call Open()
     /// </summary>
     public class RoomSwitcherUI : MonoBehaviour
     {
-        [SerializeField] private Button leftButton;
-        [SerializeField] private Button rightButton;
-        [SerializeField] private TextMeshProUGUI roomNameText;
+        [Header("UI References")]
+        [SerializeField] private GameObject selectionPanel;
+        [SerializeField] private Button closeButton;
+        [SerializeField] private Transform roomListContent;
+        [SerializeField] private GameObject roomSlotPrefab; // Prefab with Button, 2x TMP_Text
+
+        private List<GameObject> _roomSlots = new List<GameObject>();
 
         private void Start()
         {
-            if (leftButton != null) leftButton.onClick.AddListener(OnLeft);
-            if (rightButton != null) rightButton.onClick.AddListener(OnRight);
-
-            if (RoomManager.Instance != null)
-                RoomManager.Instance.OnRoomChanged += OnRoomChanged;
-
-            UpdateDisplay();
+            if (closeButton != null) closeButton.onClick.AddListener(Close);
+            if (selectionPanel != null) selectionPanel.SetActive(false);
         }
 
-        private void OnDestroy()
+        public void Open()
         {
-            if (RoomManager.Instance != null)
-                RoomManager.Instance.OnRoomChanged -= OnRoomChanged;
+            if (selectionPanel != null) selectionPanel.SetActive(true);
+            RefreshRoomList();
         }
 
-        private void OnLeft()
+        public void Close()
         {
-            if (RoomManager.Instance != null)
-                RoomManager.Instance.PreviousRoom();
+            if (selectionPanel != null) selectionPanel.SetActive(false);
         }
 
-        private void OnRight()
+        private void RefreshRoomList()
         {
-            if (RoomManager.Instance != null)
-                RoomManager.Instance.NextRoom();
+            // Clear existing
+            foreach (var slot in _roomSlots)
+                if (slot != null) Destroy(slot);
+            _roomSlots.Clear();
+
+            if (RoomManager.Instance == null || roomListContent == null || roomSlotPrefab == null) return;
+
+            var allRooms = RoomManager.Instance.AllRooms;
+            string currentId = RoomManager.Instance.CurrentRoomId;
+
+            foreach (var room in allRooms)
+            {
+                bool isCurrent = room.roomId == currentId;
+                bool isUnlocked = RoomManager.Instance.IsRoomUnlocked(room.roomId);
+
+                var slotObj = Instantiate(roomSlotPrefab, roomListContent);
+                _roomSlots.Add(slotObj);
+
+                var texts = slotObj.GetComponentsInChildren<TextMeshProUGUI>();
+                if (texts.Length >= 1) texts[0].text = room.roomName;
+
+                if (texts.Length >= 2)
+                {
+                    if (isCurrent)
+                        texts[1].text = "Current";
+                    else if (isUnlocked)
+                        texts[1].text = "Go";
+                    else
+                        texts[1].text = $"🔒 {room.unlockCost} 🐾";
+                }
+
+                var btn = slotObj.GetComponent<Button>();
+                if (btn != null)
+                {
+                    // Disable if current room or locked
+                    btn.interactable = !isCurrent && isUnlocked;
+
+                    if (!isCurrent && isUnlocked)
+                    {
+                        string capturedId = room.roomId;
+                        btn.onClick.AddListener(() => OnRoomSelected(capturedId));
+                    }
+                }
+
+                // Dim locked rooms
+                var cg = slotObj.GetComponent<CanvasGroup>();
+                if (cg != null)
+                {
+                    if (isCurrent) cg.alpha = 0.7f;
+                    else if (!isUnlocked) cg.alpha = 0.4f;
+                    else cg.alpha = 1f;
+                }
+            }
         }
 
-        private void OnRoomChanged(RoomManager.RoomConfig room)
+        private void OnRoomSelected(string roomId)
         {
-            UpdateDisplay();
-        }
+            Close();
 
-        private void UpdateDisplay()
-        {
-            if (RoomManager.Instance == null) return;
-            var room = RoomManager.Instance.CurrentRoom;
-            if (roomNameText != null && room != null)
-                roomNameText.text = room.roomName;
+            // Fade transition
+            if (ScreenFader.Instance != null)
+            {
+                ScreenFader.Instance.FadeAndExecute(() =>
+                {
+                    if (RoomManager.Instance != null)
+                        RoomManager.Instance.SwitchRoom(roomId);
+                });
+            }
+            else
+            {
+                // No fader — switch immediately
+                if (RoomManager.Instance != null)
+                    RoomManager.Instance.SwitchRoom(roomId);
+            }
         }
     }
 }

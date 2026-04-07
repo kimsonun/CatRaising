@@ -6,12 +6,12 @@ using CatRaising.Systems;
 namespace CatRaising.UI
 {
     /// <summary>
-    /// Daily task panel showing 5 tasks with completion status.
+    /// Daily task panel with Claim buttons.
+    /// Also manages a red-dot notification on the HUD button.
     /// 
     /// SETUP:
-    /// 1. Create a Panel "DailyTaskPanel" under Canvas
-    /// 2. Add 5 task slot GameObjects (each with checkmark Image, name Text, reward Text)
-    /// 3. Add progress text and close button
+    /// 1. Each task slot needs: nameText, rewardText, claimButton, checkmark
+    /// 2. Assign the hudRedDot image (small red circle on the HUD "Tasks" button)
     /// </summary>
     public class DailyTaskUI : MonoBehaviour
     {
@@ -21,9 +21,12 @@ namespace CatRaising.UI
             public DailyTaskType taskType;
             public TextMeshProUGUI nameText;
             public TextMeshProUGUI rewardText;
+            public Button claimButton;
+            public TextMeshProUGUI claimButtonText;
             public Image checkmark;
             public Color completedColor = new Color(0.2f, 0.8f, 0.2f);
             public Color pendingColor = new Color(0.6f, 0.6f, 0.6f);
+            public Color claimedColor = new Color(0.9f, 0.75f, 0.1f);
         }
 
         [Header("UI References")]
@@ -32,6 +35,10 @@ namespace CatRaising.UI
         [SerializeField] private TextMeshProUGUI progressText;
         [SerializeField] private TaskSlotUI[] taskSlots;
 
+        [Header("HUD Notification")]
+        [Tooltip("Red dot image on the HUD Tasks button — shown when there are unclaimed tasks")]
+        [SerializeField] private GameObject hudRedDot;
+
         private void Start()
         {
             if (closeButton != null)
@@ -39,20 +46,24 @@ namespace CatRaising.UI
 
             if (panel != null) panel.SetActive(false);
 
-            if (DailyTaskManager.Instance != null)
+            // Wire claim buttons
+            foreach (var slot in taskSlots)
             {
-                DailyTaskManager.Instance.OnTaskCompleted += OnTaskCompleted;
-                DailyTaskManager.Instance.OnTasksReset += RefreshAll;
+                if (slot.claimButton != null)
+                {
+                    var capturedType = slot.taskType;
+                    slot.claimButton.onClick.AddListener(() => OnClaimClicked(capturedType));
+                }
             }
-        }
 
-        private void OnDestroy()
-        {
             if (DailyTaskManager.Instance != null)
             {
-                DailyTaskManager.Instance.OnTaskCompleted -= OnTaskCompleted;
-                DailyTaskManager.Instance.OnTasksReset -= RefreshAll;
+                DailyTaskManager.Instance.OnTaskCompleted += _ => RefreshAll();
+                DailyTaskManager.Instance.OnTasksReset += RefreshAll;
+                DailyTaskManager.Instance.OnClaimStateChanged += UpdateRedDot;
             }
+
+            UpdateRedDot();
         }
 
         public void Open()
@@ -68,8 +79,10 @@ namespace CatRaising.UI
 
         public bool IsOpen => panel != null && panel.activeSelf;
 
-        private void OnTaskCompleted(DailyTaskType type)
+        private void OnClaimClicked(DailyTaskType taskType)
         {
+            if (DailyTaskManager.Instance == null) return;
+            DailyTaskManager.Instance.ClaimTask(taskType);
             RefreshAll();
         }
 
@@ -80,15 +93,41 @@ namespace CatRaising.UI
             foreach (var slot in taskSlots)
             {
                 bool done = DailyTaskManager.Instance.IsTaskComplete(slot.taskType);
+                bool claimed = DailyTaskManager.Instance.IsTaskClaimed(slot.taskType);
 
                 if (slot.nameText != null)
                     slot.nameText.text = DailyTaskManager.Instance.GetTaskName(slot.taskType);
 
                 if (slot.rewardText != null)
-                    slot.rewardText.text = done ? "✓" : $"+{DailyTaskManager.Instance.GetReward(slot.taskType)}";
+                    slot.rewardText.text = $"+{DailyTaskManager.Instance.GetReward(slot.taskType)} 🐾";
 
+                // Claim button state
+                if (slot.claimButton != null)
+                {
+                    if (claimed)
+                    {
+                        slot.claimButton.interactable = false;
+                        if (slot.claimButtonText != null) slot.claimButtonText.text = "Claimed";
+                    }
+                    else if (done)
+                    {
+                        slot.claimButton.interactable = true;
+                        if (slot.claimButtonText != null) slot.claimButtonText.text = "Claim";
+                    }
+                    else
+                    {
+                        slot.claimButton.interactable = false;
+                        if (slot.claimButtonText != null) slot.claimButtonText.text = "...";
+                    }
+                }
+
+                // Checkmark color
                 if (slot.checkmark != null)
-                    slot.checkmark.color = done ? slot.completedColor : slot.pendingColor;
+                {
+                    if (claimed) slot.checkmark.color = slot.claimedColor;
+                    else if (done) slot.checkmark.color = slot.completedColor;
+                    else slot.checkmark.color = slot.pendingColor;
+                }
             }
 
             if (progressText != null)
@@ -97,6 +136,16 @@ namespace CatRaising.UI
                 int total = DailyTaskManager.Instance.TotalTasks;
                 progressText.text = $"Daily Tasks: {done}/{total}";
             }
+
+            UpdateRedDot();
+        }
+
+        private void UpdateRedDot()
+        {
+            if (hudRedDot == null) return;
+            bool hasUnclaimed = DailyTaskManager.Instance != null &&
+                               DailyTaskManager.Instance.HasUnclaimedTasks;
+            hudRedDot.SetActive(hasUnclaimed);
         }
     }
 }

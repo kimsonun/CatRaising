@@ -1,19 +1,21 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using CatRaising.Core;
+using CatRaising.Cat;
 
 namespace CatRaising.MiniGame
 {
     /// <summary>
-    /// Cat Fishing mini-game controller. 30-second rounds, tap fish to catch.
+    /// Cat Fishing mini-game as a UI overlay. While active, all cat interactions
+    /// are disabled. Fish are UI elements spawned inside a RectTransform area.
     /// 
     /// SETUP:
-    /// 1. Create a "MiniGamePanel" under Canvas (full-screen overlay)
-    /// 2. Add score text, timer text, Start button, Close button
-    /// 3. Create a "GameOverPanel" child with score, coins earned, and play again button
-    /// 4. Create a Fish prefab with SpriteRenderer + CircleCollider2D + Fish.cs
-    /// 5. Add FishSpawner as child and assign fish prefab
-    /// 6. Add MiniGameManager component (on same object or GameManager)
+    /// 1. Create "MiniGamePanel" under Canvas — full-screen overlay
+    /// 2. Add a "FishArea" child (stretch to fill) — this is where fish swim
+    /// 3. Create FishUI prefab (Image + Button + FishUI script)
+    /// 4. Add FishSpawner component and assign fishArea + fishUIPrefab
+    /// 5. Wire score/timer/buttons
     /// </summary>
     public class CatFishingGame : MonoBehaviour
     {
@@ -36,8 +38,13 @@ namespace CatRaising.MiniGame
         [SerializeField] private FishSpawner fishSpawner;
         [SerializeField] private MiniGameManager miniGameManager;
 
-        [Header("Cat Paw (Visual feedback)")]
-        [SerializeField] private GameObject catPaw; // Optional: shows where player tapped
+        [Header("Cat Paw (UI feedback)")]
+        [Tooltip("Optional: Image of a cat paw at tap location")]
+        [SerializeField] private RectTransform catPawUI;
+
+        // References for disabling interaction
+        private CatInteraction _catInteraction;
+        private CatAI _catAI;
 
         private void Start()
         {
@@ -57,6 +64,10 @@ namespace CatRaising.MiniGame
 
             if (gamePanel != null) gamePanel.SetActive(false);
             if (gameOverPanel != null) gameOverPanel.SetActive(false);
+
+            // Find cat components for disabling
+            _catInteraction = FindAnyObjectByType<CatInteraction>();
+            _catAI = FindAnyObjectByType<CatAI>();
         }
 
         private void OnDestroy()
@@ -87,17 +98,30 @@ namespace CatRaising.MiniGame
             if (timerText != null) timerText.text = $"{miniGameManager?.GameDuration ?? 30:F0}s";
             if (instructionText != null) instructionText.text = "Tap fish to catch them!\nGolden fish = 3× points!";
             if (startButton != null) startButton.gameObject.SetActive(true);
+
+            // Disable cat interactions while mini-game is open
+            SetCatInteractionsEnabled(false);
         }
 
         public void Close()
         {
-            // Stop game if playing
             if (miniGameManager != null && miniGameManager.IsPlaying)
                 miniGameManager.EndGame();
 
             if (fishSpawner != null) fishSpawner.StopSpawning();
             if (gamePanel != null) gamePanel.SetActive(false);
             if (gameOverPanel != null) gameOverPanel.SetActive(false);
+
+            // Re-enable cat interactions
+            SetCatInteractionsEnabled(true);
+        }
+
+        private void SetCatInteractionsEnabled(bool enabled)
+        {
+            if (_catInteraction != null) _catInteraction.enabled = enabled;
+            if (_catAI != null) _catAI.SetAIEnabled(enabled);
+
+            Debug.Log($"[CatFishing] Cat interactions {(enabled ? "enabled" : "disabled")}");
         }
 
         private void OnStartClicked()
@@ -121,9 +145,9 @@ namespace CatRaising.MiniGame
 
             if (gameOverPanel != null) gameOverPanel.SetActive(true);
             if (finalScoreText != null) finalScoreText.text = $"Score: {score}";
-            if (coinsEarnedText != null) coinsEarnedText.text = $"+{coins}";
+            if (coinsEarnedText != null) coinsEarnedText.text = $"+{coins} 🐾";
 
-            Debug.Log($"[CatFishing] Game over! Score: {score}, Earned: {coins}");
+            Debug.Log($"[CatFishing] Game over! Score: {score}, Earned: {coins} 🐾");
         }
 
         private void UpdateScore(int score)
@@ -137,7 +161,6 @@ namespace CatRaising.MiniGame
             float remaining = miniGameManager.TimeRemaining;
             timerText.text = $"{remaining:F1}s";
 
-            // Flash red when low
             if (remaining < 5f)
                 timerText.color = Color.Lerp(Color.red, Color.white, Mathf.PingPong(Time.time * 3f, 1f));
             else
@@ -146,14 +169,13 @@ namespace CatRaising.MiniGame
 
         private void UpdateCatPaw()
         {
-            if (catPaw == null) return;
+            if (catPawUI == null) return;
 
-            if (CatRaising.Core.TouchInput.WasPressedThisFrame)
+            if (Input.GetMouseButtonDown(0))
             {
-                catPaw.SetActive(true);
-                catPaw.transform.position = (Vector3)CatRaising.Core.TouchInput.WorldPosition;
+                catPawUI.gameObject.SetActive(true);
+                catPawUI.position = Input.mousePosition;
 
-                // Brief show then hide
                 CancelInvoke(nameof(HidePaw));
                 Invoke(nameof(HidePaw), 0.3f);
             }
@@ -161,7 +183,7 @@ namespace CatRaising.MiniGame
 
         private void HidePaw()
         {
-            if (catPaw != null) catPaw.SetActive(false);
+            if (catPawUI != null) catPawUI.gameObject.SetActive(false);
         }
     }
 }

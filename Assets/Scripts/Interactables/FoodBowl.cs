@@ -37,6 +37,11 @@ namespace CatRaising.Interactables
         [Tooltip("Duration cat spends eating (seconds)")]
         [SerializeField] private float eatDuration = 5f;
 
+        [Header("Isometric Grid")]
+        [Tooltip("Grid cell this bowl occupies")]
+        [SerializeField] private Vector2Int gridPosition;
+        [SerializeField] private Vector2Int gridSize = Vector2Int.one;
+
         [Header("Feedback")]
         [SerializeField] private GameObject fillEffectPrefab;
 
@@ -50,16 +55,53 @@ namespace CatRaising.Interactables
         public bool IsFull => _foodAmount > 0f;
         public bool IsEmpty => _foodAmount <= 0f;
 
+        public Vector2Int GridPosition => gridPosition;
+
         private void Start()
         {
             _mainCamera = Camera.main;
             if (spriteRenderer == null) spriteRenderer = GetComponent<SpriteRenderer>();
 
-            // Load saved bowl state
             if (GameManager.Instance != null && GameManager.Instance.Data != null)
                 _foodAmount = GameManager.Instance.Data.foodBowlAmount;
 
             UpdateSprite();
+
+            // Register on isometric grid as occupied (cat walks near, not on)
+            if (IsometricGrid.Instance != null)
+                IsometricGrid.Instance.SetTilesOccupied(gridPosition, gridSize, true);
+        }
+
+        private void OnDestroy()
+        {
+            if (IsometricGrid.Instance != null)
+                IsometricGrid.Instance.SetTilesOccupied(gridPosition, gridSize, false);
+        }
+
+        /// <summary>
+        /// Get the world position of the nearest walkable tile adjacent to this bowl.
+        /// The cat should walk here to eat.
+        /// </summary>
+        public Vector3 GetAdjacentWalkablePosition()
+        {
+            if (IsometricGrid.Instance == null)
+                return transform.position + Vector3.left * 0.5f;
+
+            var grid = IsometricGrid.Instance;
+            // Check all adjacent tiles around the bowl footprint
+            Vector2Int[] offsets = {
+                new(-1, 0), new(1, 0), new(0, -1), new(0, 1),
+                new(-1, -1), new(1, 1), new(-1, 1), new(1, -1)
+            };
+
+            foreach (var offset in offsets)
+            {
+                Vector2Int adjacent = gridPosition + offset;
+                if (grid.IsTileWalkable(adjacent))
+                    return grid.GridToWorld(adjacent);
+            }
+
+            return transform.position + Vector3.left * 0.5f;
         }
 
         private void Update()

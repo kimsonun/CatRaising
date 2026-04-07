@@ -6,8 +6,8 @@ using CatRaising.Data;
 namespace CatRaising.Systems
 {
     /// <summary>
-    /// Manages 5 daily tasks that reset at midnight (real-world time).
-    /// Tasks: Login, Feed Cat, Give Water, Pet Cat, Play with Feather.
+    /// Manages 5 daily tasks that reset at midnight.
+    /// Tasks are "completed" by game actions, but rewards must be "claimed" via UI.
     /// </summary>
     public class DailyTaskManager : MonoBehaviour
     {
@@ -20,9 +20,10 @@ namespace CatRaising.Systems
         [SerializeField] private int petReward = 20;
         [SerializeField] private int playReward = 25;
 
-        public event Action<DailyTaskType> OnTaskCompleted;
+        public event Action<DailyTaskType> OnTaskCompleted; // Task done (not yet claimed)
         public event Action OnAllTasksCompleted;
         public event Action OnTasksReset;
+        public event Action OnClaimStateChanged; // For red-dot notification
 
         private void Awake()
         {
@@ -30,31 +31,25 @@ namespace CatRaising.Systems
             Instance = this;
         }
 
-        /// <summary>
-        /// Initialize daily tasks. Call after GameData is loaded.
-        /// </summary>
         public void Initialize(GameData data)
         {
-            // Check if we need to reset (new day)
             string today = GameData.TodayString;
             if (data.lastDailyResetDate != today)
             {
-                // Check if yesterday was a complete day (for streak)
                 if (data.AllDailyTasksComplete && data.lastDailyResetDate != "")
                 {
-                    // Check if it was actually yesterday
                     if (DateTime.TryParse(data.lastDailyResetDate, out DateTime lastDate))
                     {
                         if ((DateTime.Now.Date - lastDate).Days == 1)
                             data.dailyStreakDays++;
                         else
-                            data.dailyStreakDays = 0; // Streak broken
+                            data.dailyStreakDays = 0;
                     }
                     data.lastDailyCompleteDate = data.lastDailyResetDate;
                 }
                 else if (data.lastDailyResetDate != "")
                 {
-                    data.dailyStreakDays = 0; // Didn't complete all tasks
+                    data.dailyStreakDays = 0;
                 }
 
                 // Reset all tasks
@@ -63,6 +58,14 @@ namespace CatRaising.Systems
                 data.dailyWater = false;
                 data.dailyPet = false;
                 data.dailyPlay = false;
+
+                // Reset claimed states
+                data.dailyLoginClaimed = false;
+                data.dailyFeedClaimed = false;
+                data.dailyWaterClaimed = false;
+                data.dailyPetClaimed = false;
+                data.dailyPlayClaimed = false;
+
                 data.lastDailyResetDate = today;
 
                 OnTasksReset?.Invoke();
@@ -74,27 +77,20 @@ namespace CatRaising.Systems
         }
 
         /// <summary>
-        /// Mark a task as complete. Called by game systems when actions happen.
+        /// Mark a task as complete (does NOT award reward — player must claim).
         /// </summary>
         public void CheckTask(DailyTaskType taskType)
         {
-            if (GameManager.Instance == null || GameManager.Instance.Data == null) return;
+            if (GameManager.Instance?.Data == null) return;
             var data = GameManager.Instance.Data;
 
-            if (IsTaskComplete(taskType)) return; // Already done today
+            if (IsTaskComplete(taskType)) return;
 
-            // Mark complete
             SetTaskComplete(data, taskType, true);
-
-            // Award coins
-            int reward = GetReward(taskType);
-            if (PawCoinManager.Instance != null && reward > 0)
-                PawCoinManager.Instance.AddCoins(reward, $"daily:{taskType}");
-
             OnTaskCompleted?.Invoke(taskType);
-            Debug.Log($"[DailyTask] ✅ {taskType} complete! +{reward}");
+            OnClaimStateChanged?.Invoke();
+            Debug.Log($"[DailyTask] ✅ {taskType} complete! (needs claiming)");
 
-            // Check if all complete
             if (data.AllDailyTasksComplete)
             {
                 OnAllTasksCompleted?.Invoke();
@@ -102,11 +98,31 @@ namespace CatRaising.Systems
             }
         }
 
-        public bool IsTaskComplete(DailyTaskType taskType)
+        /// <summary>
+        /// Claim reward for a completed task. Returns coins awarded.
+        /// </summary>
+        public int ClaimTask(DailyTaskType taskType)
         {
-            if (GameManager.Instance == null || GameManager.Instance.Data == null) return false;
+            if (!IsTaskComplete(taskType) || IsTaskClaimed(taskType)) return 0;
+
+            if (GameManager.Instance?.Data == null) return 0;
             var data = GameManager.Instance.Data;
 
+            SetTaskClaimed(data, taskType, true);
+
+            int reward = GetReward(taskType);
+            if (PawCoinManager.Instance != null && reward > 0)
+                PawCoinManager.Instance.AddCoins(reward, $"daily:{taskType}");
+
+            OnClaimStateChanged?.Invoke();
+            Debug.Log($"[DailyTask] Claimed {taskType}: +{reward} 🐾");
+            return reward;
+        }
+
+        public bool IsTaskComplete(DailyTaskType taskType)
+        {
+            if (GameManager.Instance?.Data == null) return false;
+            var data = GameManager.Instance.Data;
             return taskType switch
             {
                 DailyTaskType.Login => data.dailyLogin,
@@ -118,6 +134,34 @@ namespace CatRaising.Systems
             };
         }
 
+        public bool IsTaskClaimed(DailyTaskType taskType)
+        {
+            if (GameManager.Instance?.Data == null) return false;
+            var data = GameManager.Instance.Data;
+            return taskType switch
+            {
+                DailyTaskType.Login => data.dailyLoginClaimed,
+                DailyTaskType.FeedCat => data.dailyFeedClaimed,
+                DailyTaskType.GiveWater => data.dailyWaterClaimed,
+                DailyTaskType.PetCat => data.dailyPetClaimed,
+                DailyTaskType.PlayFeather => data.dailyPlayClaimed,
+                _ => false
+            };
+        }
+
+        /// <summary>
+        /// True if there are completed but unclaimed tasks (for red-dot notification).
+        /// </summary>
+        public bool HasUnclaimedTasks
+        {
+            get
+            {
+                foreach (DailyTaskType t in System.Enum.GetValues(typeof(DailyTaskType)))
+                    if (IsTaskComplete(t) && !IsTaskClaimed(t)) return true;
+                return false;
+            }
+        }
+
         private void SetTaskComplete(GameData data, DailyTaskType taskType, bool value)
         {
             switch (taskType)
@@ -127,6 +171,18 @@ namespace CatRaising.Systems
                 case DailyTaskType.GiveWater: data.dailyWater = value; break;
                 case DailyTaskType.PetCat: data.dailyPet = value; break;
                 case DailyTaskType.PlayFeather: data.dailyPlay = value; break;
+            }
+        }
+
+        private void SetTaskClaimed(GameData data, DailyTaskType taskType, bool value)
+        {
+            switch (taskType)
+            {
+                case DailyTaskType.Login: data.dailyLoginClaimed = value; break;
+                case DailyTaskType.FeedCat: data.dailyFeedClaimed = value; break;
+                case DailyTaskType.GiveWater: data.dailyWaterClaimed = value; break;
+                case DailyTaskType.PetCat: data.dailyPetClaimed = value; break;
+                case DailyTaskType.PlayFeather: data.dailyPlayClaimed = value; break;
             }
         }
 

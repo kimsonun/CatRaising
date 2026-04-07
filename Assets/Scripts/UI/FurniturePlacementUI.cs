@@ -10,14 +10,16 @@ using CatRaising.Systems;
 namespace CatRaising.UI
 {
     /// <summary>
-    /// Isometric furniture placement mode. Player selects owned furniture and places
-    /// on the isometric grid. Furniture snaps to diamond tiles and can occupy multiple tiles.
+    /// Isometric furniture placement with click-to-lock behavior.
+    /// 
+    /// Flow: Select item → ghost follows cursor → click valid tile to LOCK ghost →
+    ///       Confirm places furniture / Cancel releases ghost.
     /// 
     /// SETUP:
-    /// 1. Create a Panel "FurniturePlacementPanel" with inventory list + confirm/cancel buttons
-    /// 2. Assign the furniture prefab (generic with FurnitureInstance + SpriteRenderer)
-    /// 3. Ensure IsometricGrid is in the scene
-    /// 4. Add a "Decorate" HUD button to call Open()
+    /// 1. Create "FurniturePlacementPanel" with inventory ScrollView + confirm/cancel
+    /// 2. For grid layout in inventory: use GridLayoutGroup (4 columns) on the ScrollView Content
+    /// 3. Assign furniture prefab (SpriteRenderer + FurnitureInstance)
+    /// 4. Ensure IsometricGrid is in scene
     /// </summary>
     public class FurniturePlacementUI : MonoBehaviour
     {
@@ -27,22 +29,25 @@ namespace CatRaising.UI
         [SerializeField] private Button confirmButton;
         [SerializeField] private Button cancelButton;
         [SerializeField] private Button removeButton;
-        [SerializeField] private Transform inventoryContent;
+        [SerializeField] private Transform inventoryContent; // Should have GridLayoutGroup
         [SerializeField] private GameObject inventorySlotPrefab;
 
         [Header("Placement")]
         [SerializeField] private GameObject furniturePrefab;
         [SerializeField] private Color validColor = new Color(0.5f, 1f, 0.5f, 0.7f);
         [SerializeField] private Color invalidColor = new Color(1f, 0.5f, 0.5f, 0.7f);
+        [SerializeField] private Color lockedColor = new Color(0.7f, 1f, 0.7f, 0.9f);
 
         [Header("Tile Highlight (Optional)")]
-        [Tooltip("Prefab for highlighting grid cells. Should be a diamond-shaped sprite.")]
         [SerializeField] private GameObject tileHighlightPrefab;
 
         [Header("References")]
         [SerializeField] private ShopUI shopUI;
 
-        private bool _isPlacing = false;
+        // States
+        private enum PlacementState { Idle, Following, Locked }
+        private PlacementState _state = PlacementState.Idle;
+
         private GameObject _ghostFurniture;
         private ShopUI.ShopItem _selectedItem;
         private Vector2Int _ghostGridPos;
@@ -58,13 +63,20 @@ namespace CatRaising.UI
             if (removeButton != null) removeButton.onClick.AddListener(RemoveSelectedFurniture);
 
             if (placementPanel != null) placementPanel.SetActive(false);
+            HidePlacementButtons();
         }
 
         private void Update()
         {
-            if (_isPlacing && _ghostFurniture != null)
+            if (_state == PlacementState.Following && _ghostFurniture != null)
             {
-                UpdateGhostPosition();
+                UpdateGhostFollowing();
+
+                // Click on a valid tile to lock
+                if (Input.GetMouseButtonDown(0) && !TouchInput.IsOverUI)
+                {
+                    TryLockGhost();
+                }
             }
         }
 
@@ -87,7 +99,7 @@ namespace CatRaising.UI
         {
             CancelPlacement();
             _selectedItem = item;
-            _isPlacing = true;
+            _state = PlacementState.Following;
 
             if (furniturePrefab != null)
             {
@@ -99,113 +111,81 @@ namespace CatRaising.UI
                     sr.color = validColor;
                 }
 
-                // Disable physics on ghost
                 var col = _ghostFurniture.GetComponentInChildren<Collider2D>();
                 if (col != null) col.enabled = false;
 
-                // Disable FurnitureInstance behavior on ghost
                 var fi = _ghostFurniture.GetComponentInChildren<FurnitureInstance>();
                 if (fi != null) fi.enabled = false;
             }
 
-            if (confirmButton != null) confirmButton.gameObject.SetActive(true);
+            // Show cancel but NOT confirm yet
             if (cancelButton != null) cancelButton.gameObject.SetActive(true);
+            if (confirmButton != null) confirmButton.gameObject.SetActive(false);
         }
 
-        private void UpdateGhostPosition()
+        /// <summary>
+        /// Ghost follows cursor, snapping to isometric grid tiles.
+        /// </summary>
+        private void UpdateGhostFollowing()
         {
             if (_ghostFurniture == null || IsometricGrid.Instance == null) return;
 
             var grid = IsometricGrid.Instance;
             Vector2 worldPos = TouchInput.WorldPosition;
-
-            // Snap to nearest grid cell
             Vector2Int cell = grid.WorldToGrid(worldPos);
+
             _ghostGridPos = cell;
-
-            // Position ghost at the grid cell center
-            // For multi-tile furniture, we anchor at (col, row) and the sprite center
-            // is offset to cover all tiles
-            Vector3 anchorWorld = grid.GridToWorld(cell);
-
-            if (_selectedItem != null && (_selectedItem.gridSize.x > 1 || _selectedItem.gridSize.y > 1))
-            {
-                // Calculate center of multi-tile footprint
-                Vector3 endWorld = grid.GridToWorld(cell.x + _selectedItem.gridSize.x - 1,
-                                                     cell.y + _selectedItem.gridSize.y - 1);
-                anchorWorld = (anchorWorld + endWorld) * 0.5f;
-            }
-
+            Vector3 anchorWorld = CalculateAnchorWorld(grid, cell);
             _ghostFurniture.transform.position = anchorWorld;
 
-            // Check validity
             bool valid = IsValidPlacement(cell);
-
             var sr = _ghostFurniture.GetComponentInChildren<SpriteRenderer>();
             if (sr != null)
                 sr.color = valid ? validColor : invalidColor;
 
-            // Update tile highlights
             UpdateTileHighlights(cell, valid);
         }
 
-        private bool IsValidPlacement(Vector2Int cell)
+        /// <summary>
+        /// Click on a valid tile to lock the ghost in place.
+        /// </summary>
+        private void TryLockGhost()
         {
-            if (IsometricGrid.Instance == null) return false;
-            if (_selectedItem == null) return false;
+            if (IsometricGrid.Instance == null || _selectedItem == null) return;
 
-            return IsometricGrid.Instance.CanPlaceFurniture(cell, _selectedItem.gridSize);
-        }
+            Vector2Int cell = _ghostGridPos;
 
-        private void UpdateTileHighlights(Vector2Int anchor, bool valid)
-        {
-            ClearTileHighlights();
-
-            if (tileHighlightPrefab == null || IsometricGrid.Instance == null || _selectedItem == null)
-                return;
-
-            var grid = IsometricGrid.Instance;
-            Color highlightColor = valid ? validColor : invalidColor;
-
-            for (int c = anchor.x; c < anchor.x + _selectedItem.gridSize.x; c++)
+            if (IsValidPlacement(cell))
             {
-                for (int r = anchor.y; r < anchor.y + _selectedItem.gridSize.y; r++)
-                {
-                    Vector3 pos = grid.GridToWorld(c, r);
-                    var highlight = Instantiate(tileHighlightPrefab, pos, Quaternion.identity);
+                // Lock ghost at this position
+                _state = PlacementState.Locked;
 
-                    var sr = highlight.GetComponent<SpriteRenderer>();
-                    if (sr != null) sr.color = highlightColor;
+                var sr = _ghostFurniture.GetComponentInChildren<SpriteRenderer>();
+                if (sr != null)
+                    sr.color = lockedColor;
 
-                    _tileHighlights.Add(highlight);
-                }
+                // Now show both confirm and cancel
+                if (confirmButton != null) confirmButton.gameObject.SetActive(true);
+                if (cancelButton != null) cancelButton.gameObject.SetActive(true);
+
+                Debug.Log($"[Furniture] Ghost locked at grid ({cell.x}, {cell.y}). Confirm or Cancel.");
             }
-        }
-
-        private void ClearTileHighlights()
-        {
-            foreach (var h in _tileHighlights)
-                if (h != null) Destroy(h);
-            _tileHighlights.Clear();
         }
 
         private void ConfirmPlacement()
         {
-            if (!_isPlacing || _ghostFurniture == null || _selectedItem == null) return;
+            if (_state != PlacementState.Locked || _ghostFurniture == null || _selectedItem == null) return;
             if (IsometricGrid.Instance == null) return;
 
             if (!IsValidPlacement(_ghostGridPos))
             {
-                Debug.Log("[Furniture] Invalid position — tiles occupied or out of bounds!");
+                Debug.Log("[Furniture] Invalid — tiles occupied or out of bounds!");
                 return;
             }
 
             var grid = IsometricGrid.Instance;
-
-            // Mark tiles as occupied
             grid.SetTilesOccupied(_ghostGridPos, _selectedItem.gridSize, true);
 
-            // Save placement with grid coordinates
             var saveData = new FurnitureSaveData
             {
                 itemId = _selectedItem.itemId,
@@ -217,7 +197,7 @@ namespace CatRaising.UI
             if (GameManager.Instance?.Data != null)
                 GameManager.Instance.Data.placedFurniture.Add(saveData);
 
-            // Convert ghost to placed furniture
+            // Convert ghost to real furniture
             var sr = _ghostFurniture.GetComponentInChildren<SpriteRenderer>();
             if (sr != null) sr.color = Color.white;
 
@@ -233,18 +213,19 @@ namespace CatRaising.UI
             }
 
             _placedFurnitureObjects.Add(_ghostFurniture);
+
+            Debug.Log($"[Furniture] Placed at grid ({_ghostGridPos.x}, {_ghostGridPos.y})");
+
             _ghostFurniture = null;
-            _isPlacing = false;
             _selectedItem = null;
+            _state = PlacementState.Idle;
 
             ClearTileHighlights();
-            if (confirmButton != null) confirmButton.gameObject.SetActive(false);
-            if (cancelButton != null) cancelButton.gameObject.SetActive(false);
+            HidePlacementButtons();
 
             if (AchievementManager.Instance != null)
                 AchievementManager.Instance.CheckAll();
 
-            Debug.Log($"[Furniture] Placed at grid ({_ghostGridPos.x}, {_ghostGridPos.y})");
             RefreshInventory();
         }
 
@@ -255,28 +236,74 @@ namespace CatRaising.UI
                 Destroy(_ghostFurniture);
                 _ghostFurniture = null;
             }
-            _isPlacing = false;
+            _state = PlacementState.Idle;
             _selectedItem = null;
 
             ClearTileHighlights();
+            HidePlacementButtons();
+        }
+
+        private void HidePlacementButtons()
+        {
             if (confirmButton != null) confirmButton.gameObject.SetActive(false);
             if (cancelButton != null) cancelButton.gameObject.SetActive(false);
         }
 
         private void RemoveSelectedFurniture()
         {
-            // TODO: implement tap-to-select and remove
             Debug.Log("[Furniture] Remove mode: tap a placed furniture to pick it up.");
+        }
+
+        // ─── Helpers ────────────────────────────────────────────
+
+        private Vector3 CalculateAnchorWorld(IsometricGrid grid, Vector2Int cell)
+        {
+            Vector3 anchor = grid.GridToWorld(cell);
+            if (_selectedItem != null && (_selectedItem.gridSize.x > 1 || _selectedItem.gridSize.y > 1))
+            {
+                Vector3 endWorld = grid.GridToWorld(cell.x + _selectedItem.gridSize.x - 1,
+                                                     cell.y + _selectedItem.gridSize.y - 1);
+                anchor = (anchor + endWorld) * 0.5f;
+            }
+            return anchor;
+        }
+
+        private bool IsValidPlacement(Vector2Int cell)
+        {
+            if (IsometricGrid.Instance == null || _selectedItem == null) return false;
+            return IsometricGrid.Instance.CanPlaceFurniture(cell, _selectedItem.gridSize);
+        }
+
+        private void UpdateTileHighlights(Vector2Int anchor, bool valid)
+        {
+            ClearTileHighlights();
+            if (tileHighlightPrefab == null || IsometricGrid.Instance == null || _selectedItem == null) return;
+
+            var grid = IsometricGrid.Instance;
+            Color c = valid ? validColor : invalidColor;
+
+            for (int col = anchor.x; col < anchor.x + _selectedItem.gridSize.x; col++)
+                for (int row = anchor.y; row < anchor.y + _selectedItem.gridSize.y; row++)
+                {
+                    Vector3 pos = grid.GridToWorld(col, row);
+                    var h = Instantiate(tileHighlightPrefab, pos, Quaternion.identity);
+                    var sr = h.GetComponent<SpriteRenderer>();
+                    if (sr != null) sr.color = c;
+                    _tileHighlights.Add(h);
+                }
+        }
+
+        private void ClearTileHighlights()
+        {
+            foreach (var h in _tileHighlights)
+                if (h != null) Destroy(h);
+            _tileHighlights.Clear();
         }
 
         // ─── Loading & Spawning ─────────────────────────────────
 
-        /// <summary>
-        /// Load placed furniture from save data and rebuild occupancy grid.
-        /// </summary>
         public void LoadPlacedFurniture()
         {
-            // Clear existing
             foreach (var obj in _placedFurnitureObjects)
                 if (obj != null) Destroy(obj);
             _placedFurnitureObjects.Clear();
@@ -298,7 +325,6 @@ namespace CatRaising.UI
 
                 Vector2Int cell = new Vector2Int(save.gridCol, save.gridRow);
 
-                // Calculate world position
                 Vector3 worldPos;
                 if (grid != null)
                 {
@@ -309,8 +335,6 @@ namespace CatRaising.UI
                                                           cell.y + item.gridSize.y - 1);
                         worldPos = (worldPos + endPos) * 0.5f;
                     }
-
-                    // Mark tiles occupied
                     grid.SetTilesOccupied(cell, item.gridSize, true);
                 }
                 else
@@ -319,7 +343,6 @@ namespace CatRaising.UI
                 }
 
                 var obj = Instantiate(furniturePrefab, worldPos, Quaternion.identity);
-
                 var fi = obj.GetComponent<FurnitureInstance>();
                 if (fi != null)
                     fi.Setup(save.itemId, save.roomId, item.itemSprite,
@@ -351,7 +374,6 @@ namespace CatRaising.UI
                 if (texts.Length >= 1) texts[0].text = item.itemName;
                 if (texts.Length >= 2) texts[1].text = placed ? "Placed" : "Tap to place";
 
-                Debug.Log(slotObj);
                 var btn = slotObj.GetComponent<Button>();
                 if (btn != null && !placed)
                 {
@@ -365,7 +387,6 @@ namespace CatRaising.UI
         {
             if (GameManager.Instance?.Data == null) return false;
             string currentRoom = RoomManager.Instance?.CurrentRoomId ?? "living_room";
-
             foreach (var save in GameManager.Instance.Data.placedFurniture)
                 if (save.itemId == itemId && save.roomId == currentRoom) return true;
             return false;

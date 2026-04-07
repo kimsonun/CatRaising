@@ -7,7 +7,8 @@ using CatRaising.Data;
 namespace CatRaising.Systems
 {
     /// <summary>
-    /// Manages 25 achievements. Checks conditions on events and awards Paw Coins + bond.
+    /// Manages 25 achievements. Unlocking notifies the UI popup,
+    /// but rewards are only given when the player presses "Claim".
     /// </summary>
     public class AchievementManager : MonoBehaviour
     {
@@ -53,8 +54,10 @@ namespace CatRaising.Systems
         };
 
         public event Action<AchievementDef> OnAchievementUnlocked;
+        public event Action OnClaimStateChanged; // For red-dot notification
 
         private HashSet<string> _unlocked = new HashSet<string>();
+        private HashSet<string> _claimed = new HashSet<string>();
 
         private void Awake()
         {
@@ -65,20 +68,25 @@ namespace CatRaising.Systems
         public void LoadFromData(GameData data)
         {
             _unlocked.Clear();
+            _claimed.Clear();
+
             if (data.unlockedAchievementIds != null)
-            {
                 foreach (var id in data.unlockedAchievementIds)
                     _unlocked.Add(id);
-            }
+
+            if (data.claimedAchievementIds != null)
+                foreach (var id in data.claimedAchievementIds)
+                    _claimed.Add(id);
         }
 
         public void SaveToData(GameData data)
         {
             data.unlockedAchievementIds = new List<string>(_unlocked);
+            data.claimedAchievementIds = new List<string>(_claimed);
         }
 
         /// <summary>
-        /// Try to unlock an achievement. Does nothing if already unlocked.
+        /// Try to unlock an achievement. Does NOT award reward — player must claim.
         /// </summary>
         public void TryUnlock(AchievementId id)
         {
@@ -89,27 +97,40 @@ namespace CatRaising.Systems
             if (def == null) return;
 
             _unlocked.Add(key);
+            OnAchievementUnlocked?.Invoke(def);
+            OnClaimStateChanged?.Invoke();
+            Debug.Log($"[Achievement] 🏆 Unlocked: {def.name} (needs claiming)");
+        }
 
-            // Award rewards
+        /// <summary>
+        /// Claim an unlocked achievement and receive its reward.
+        /// </summary>
+        public void ClaimAchievement(AchievementId id)
+        {
+            string key = id.ToString();
+            if (!_unlocked.Contains(key) || _claimed.Contains(key)) return;
+
+            var def = GetDefinition(id);
+            if (def == null) return;
+
+            _claimed.Add(key);
+
+            // Award rewards on claim
             if (def.coinReward > 0 && PawCoinManager.Instance != null)
                 PawCoinManager.Instance.AddCoins(def.coinReward, $"achievement:{def.name}");
 
             if (def.bondReward > 0 && BondSystem.Instance != null)
                 BondSystem.Instance.AddBond(def.bondReward, $"achievement:{def.name}");
 
-            OnAchievementUnlocked?.Invoke(def);
-            Debug.Log($"[Achievement] 🏆 Unlocked: {def.name} (+{def.coinReward})");
+            OnClaimStateChanged?.Invoke();
+            Debug.Log($"[Achievement] ✅ Claimed: {def.name} (+{def.coinReward} 🐾)");
         }
 
-        /// <summary>
-        /// Check all stat-based achievements. Called periodically or after key events.
-        /// </summary>
         public void CheckAll()
         {
             if (GameManager.Instance?.Data == null) return;
             var data = GameManager.Instance.Data;
 
-            // Interaction counts
             if (data.totalPets >= 1) TryUnlock(AchievementId.FirstTouch);
             if (data.totalPets >= 50) TryUnlock(AchievementId.CatWhisperer);
             if (data.totalFeedings >= 1) TryUnlock(AchievementId.HungryKitty);
@@ -117,44 +138,47 @@ namespace CatRaising.Systems
             if (data.totalPlays >= 1) TryUnlock(AchievementId.Playtime);
             if (data.totalPlays >= 25) TryUnlock(AchievementId.PlayBuddy);
 
-            // Bond tiers
             if (data.bondLevel >= 11) TryUnlock(AchievementId.BondAcquaintance);
             if (data.bondLevel >= 26) TryUnlock(AchievementId.BondFriend);
             if (data.bondLevel >= 51) TryUnlock(AchievementId.BondCompanion);
             if (data.bondLevel >= 76) TryUnlock(AchievementId.BondBestFriend);
             if (data.bondLevel >= 91) TryUnlock(AchievementId.BondSoulmate);
 
-            // Days played
             if (data.daysPlayed >= 1) TryUnlock(AchievementId.Day1);
             if (data.daysPlayed >= 7) TryUnlock(AchievementId.OneWeek);
             if (data.daysPlayed >= 14) TryUnlock(AchievementId.TwoWeeks);
 
-            // Grooming
             if (data.totalGroomings >= 10) TryUnlock(AchievementId.CleanKitty);
 
-            // Daily tasks
             if (data.AllDailyTasksComplete) TryUnlock(AchievementId.Completionist);
             if (data.dailyStreakDays >= 7) TryUnlock(AchievementId.Dedicated);
 
-            // Shopping
             if (data.totalItemsPurchased >= 10) TryUnlock(AchievementId.Shopaholic);
 
-            // Rooms
             if (data.unlockedRoomIds != null)
             {
                 if (data.unlockedRoomIds.Count >= 2) TryUnlock(AchievementId.Homeowner);
                 if (data.unlockedRoomIds.Count >= 3) TryUnlock(AchievementId.FullHouse);
             }
 
-            // Furniture
             if (data.placedFurniture != null && data.placedFurniture.Count >= 1)
                 TryUnlock(AchievementId.InteriorDesigner);
 
-            // Fishing
             if (data.bestFishingScore >= 20) TryUnlock(AchievementId.FishingPro);
         }
 
         public bool IsUnlocked(AchievementId id) => _unlocked.Contains(id.ToString());
+        public bool IsClaimed(AchievementId id) => _claimed.Contains(id.ToString());
+
+        public bool HasUnclaimedAchievements
+        {
+            get
+            {
+                foreach (var key in _unlocked)
+                    if (!_claimed.Contains(key)) return true;
+                return false;
+            }
+        }
 
         public static AchievementDef GetDefinition(AchievementId id)
         {
