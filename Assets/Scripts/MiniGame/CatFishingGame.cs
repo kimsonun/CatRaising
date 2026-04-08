@@ -26,6 +26,7 @@ namespace CatRaising.MiniGame
         [SerializeField] private Button startButton;
         [SerializeField] private Button closeButton;
         [SerializeField] private TextMeshProUGUI instructionText;
+        [SerializeField] private GameObject instructionPanel;
 
         [Header("UI - Game Over")]
         [SerializeField] private GameObject gameOverPanel;
@@ -94,7 +95,7 @@ namespace CatRaising.MiniGame
             if (gamePanel != null) gamePanel.SetActive(true);
             if (gameOverPanel != null) gameOverPanel.SetActive(false);
 
-            if (scoreText != null) scoreText.text = "0";
+            if (scoreText != null) scoreText.text = "Score: 0";
             if (timerText != null) timerText.text = $"{miniGameManager?.GameDuration ?? 30:F0}s";
             if (instructionText != null) instructionText.text = "Tap fish to catch them!\nGolden fish = 3× points!";
             if (startButton != null) startButton.gameObject.SetActive(true);
@@ -129,6 +130,7 @@ namespace CatRaising.MiniGame
             if (gameOverPanel != null) gameOverPanel.SetActive(false);
             if (startButton != null) startButton.gameObject.SetActive(false);
             if (instructionText != null) instructionText.gameObject.SetActive(false);
+            if (instructionPanel != null) instructionPanel.SetActive(false);
 
             if (miniGameManager != null) miniGameManager.StartGame();
             if (fishSpawner != null) fishSpawner.StartSpawning();
@@ -145,14 +147,14 @@ namespace CatRaising.MiniGame
 
             if (gameOverPanel != null) gameOverPanel.SetActive(true);
             if (finalScoreText != null) finalScoreText.text = $"Score: {score}";
-            if (coinsEarnedText != null) coinsEarnedText.text = $"+{coins} 🐾";
+            if (coinsEarnedText != null) coinsEarnedText.text = $"+{coins} ";
 
-            Debug.Log($"[CatFishing] Game over! Score: {score}, Earned: {coins} 🐾");
+            Debug.Log($"[CatFishing] Game over! Score: {score}, Earned: {coins} ");
         }
 
         private void UpdateScore(int score)
         {
-            if (scoreText != null) scoreText.text = score.ToString();
+            if (scoreText != null) scoreText.text = "Score: " + score.ToString();
         }
 
         private void UpdateTimer()
@@ -161,10 +163,10 @@ namespace CatRaising.MiniGame
             float remaining = miniGameManager.TimeRemaining;
             timerText.text = $"{remaining:F1}s";
 
-            if (remaining < 5f)
-                timerText.color = Color.Lerp(Color.red, Color.white, Mathf.PingPong(Time.time * 3f, 1f));
+            if (remaining < 10f)
+                timerText.color = Color.Lerp(Color.red, Color.black, Mathf.PingPong(Time.time * 3f, 1f));
             else
-                timerText.color = Color.white;
+                timerText.color = Color.black;
         }
 
         private void UpdateCatPaw()

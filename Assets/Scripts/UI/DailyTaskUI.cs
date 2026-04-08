@@ -99,7 +99,7 @@ namespace CatRaising.UI
                     slot.nameText.text = DailyTaskManager.Instance.GetTaskName(slot.taskType);
 
                 if (slot.rewardText != null)
-                    slot.rewardText.text = $"+{DailyTaskManager.Instance.GetReward(slot.taskType)} 🐾";
+                    slot.rewardText.text = $"+{DailyTaskManager.Instance.GetReward(slot.taskType)} ";
 
                 // Claim button state
                 if (slot.claimButton != null)
@@ -117,7 +117,7 @@ namespace CatRaising.UI
                     else
                     {
                         slot.claimButton.interactable = false;
-                        if (slot.claimButtonText != null) slot.claimButtonText.text = "...";
+                        if (slot.claimButtonText != null) slot.claimButtonText.text = "";
                     }
                 }
 

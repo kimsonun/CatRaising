@@ -123,7 +123,7 @@ namespace CatRaising.Systems
                 BondSystem.Instance.AddBond(def.bondReward, $"achievement:{def.name}");
 
             OnClaimStateChanged?.Invoke();
-            Debug.Log($"[Achievement] ✅ Claimed: {def.name} (+{def.coinReward} 🐾)");
+            Debug.Log($"[Achievement] ✅ Claimed: {def.name} (+{def.coinReward})");
         }
 
         public void CheckAll()

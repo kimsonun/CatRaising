@@ -21,8 +21,7 @@ namespace CatRaising.MiniGame
         [SerializeField] private RectTransform fishArea;
 
         [Header("Fish Sprites")]
-        [SerializeField] private Sprite normalFishSprite;
-        [SerializeField] private Sprite goldenFishSprite;
+        [SerializeField] private Sprite[] normalFishSprites;
 
         [Header("Spawn Settings")]
         [SerializeField] private float baseSpawnInterval = 1.5f;
@@ -96,10 +95,12 @@ namespace CatRaising.MiniGame
 
             bool golden = Random.value < goldenChance;
 
+            Sprite normalFishSprite = normalFishSprites[Random.Range(0, normalFishSprites.Length)];
+
             var fishObj = Instantiate(fishUIPrefab, fishArea);
             var fishUI = fishObj.GetComponent<FishUI>();
             if (fishUI != null)
-                fishUI.Initialize(spawnPos, direction, speed, golden, normalFishSprite, goldenFishSprite);
+                fishUI.Initialize(spawnPos, direction, speed, golden, normalFishSprite, normalFishSprite);
         }
     }
 }

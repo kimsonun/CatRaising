@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using CatRaising.Systems;
+using TMPro;
 
 namespace CatRaising.MiniGame
 {
@@ -34,6 +35,9 @@ namespace CatRaising.MiniGame
         private float _bobSpeed;
         private float _baseY;
         private RectTransform _parentRect;
+        private float pulseSpeed = 2f;
+        private Image fishImage;
+        private UIShineSweep shineEffect;
 
         public bool IsCaught => _caught;
 
@@ -53,6 +57,7 @@ namespace CatRaising.MiniGame
             _bobSpeed = Random.Range(2f, 4f);
             _bobTimer = Random.Range(0f, Mathf.PI * 2f);
 
+            Vector3 currentScale = _rectTransform.localScale;
             // Set sprite
             if (_image != null)
             {
@@ -67,11 +72,19 @@ namespace CatRaising.MiniGame
 
             // Flip based on direction
             if (_direction.x < 0)
-                _rectTransform.localScale = new Vector3(-1, 1, 1);
+                _rectTransform.localScale = new Vector3(-currentScale.x, currentScale.y, currentScale.z);
 
             // Scale variation
-            float scale = golden ? 1.3f : Random.Range(0.7f, 1.1f);
+            float scale = golden ? 1.3f : Random.Range(0.8f, 1.2f);
             _rectTransform.localScale *= scale;
+            
+            shineEffect = GetComponentInChildren<UIShineSweep>();
+            fishImage = GetComponent<Image>();
+
+            if (!golden)
+            {
+                shineEffect.gameObject.SetActive(false);
+            }
         }
 
         private void Update()
@@ -87,6 +100,11 @@ namespace CatRaising.MiniGame
             pos.y = _baseY + Mathf.Sin(_bobTimer) * _bobAmplitude;
 
             _rectTransform.anchoredPosition = pos;
+
+            if (isGolden)
+            {
+                fishImage.color = Color.Lerp(goldenColor, normalColor, Mathf.PingPong(Time.time * pulseSpeed, 1f));
+            }
 
             // Destroy if off-screen
             if (_parentRect != null)
@@ -113,8 +131,71 @@ namespace CatRaising.MiniGame
             if (isGolden && AchievementManager.Instance != null)
                 AchievementManager.Instance.TryUnlock(AchievementId.GoldenCatch);
 
+            // Spawn floating score text
+            SpawnScorePopup();
+
             // Quick shrink + destroy
             StartCoroutine(CatchAnimation());
+        }
+
+        /// <summary>
+        /// Creates a floating "+1" or "+3" text at the fish's position that drifts upward and fades out.
+        /// </summary>
+        private void SpawnScorePopup()
+        {
+            if (_parentRect == null) return;
+
+            // Create a new GameObject with TextMeshProUGUI
+            var popupObj = new GameObject("ScorePopup");
+            popupObj.transform.SetParent(_parentRect, false);
+
+            var popupRect = popupObj.AddComponent<RectTransform>();
+            popupRect.anchoredPosition = _rectTransform.anchoredPosition;
+            popupRect.sizeDelta = new Vector2(120f, 60f);
+
+            var popupText = popupObj.AddComponent<TextMeshProUGUI>();
+            popupText.text = isGolden ? "+3" : "+1";
+            popupText.fontSize = isGolden ? 48f : 36f;
+            popupText.color = isGolden ? new Color(1f, 0.85f, 0f) : Color.white;
+            popupText.alignment = TextAlignmentOptions.Center;
+            popupText.fontStyle = FontStyles.Bold;
+            popupText.enableAutoSizing = false;
+
+            // Ensure it renders on top
+            var canvas = popupObj.AddComponent<Canvas>();
+            canvas.overrideSorting = true;
+            canvas.sortingOrder = 999;
+
+            StartCoroutine(FloatingScoreAnimation(popupRect, popupText));
+        }
+
+        private System.Collections.IEnumerator FloatingScoreAnimation(RectTransform rect, TextMeshProUGUI text)
+        {
+            float duration = 1f;
+            float elapsed = 0f;
+            Vector2 startPos = rect.anchoredPosition;
+            Color startColor = text.color;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / duration;
+
+                // Float upward
+                rect.anchoredPosition = startPos + Vector2.up * 80f * t;
+
+                // Fade out in the second half
+                float alpha = t < 0.5f ? 1f : Mathf.Lerp(1f, 0f, (t - 0.5f) * 2f);
+                text.color = new Color(startColor.r, startColor.g, startColor.b, alpha);
+
+                // Scale up slightly at start, then shrink
+                float scale = t < 0.2f ? Mathf.Lerp(0.5f, 1.2f, t / 0.2f) : Mathf.Lerp(1.2f, 1f, (t - 0.2f) / 0.8f);
+                rect.localScale = Vector3.one * scale;
+
+                yield return null;
+            }
+
+            Destroy(rect.gameObject);
         }
 
         private System.Collections.IEnumerator CatchAnimation()

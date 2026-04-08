@@ -1,5 +1,6 @@
 using UnityEngine;
 using CatRaising.Cat;
+using CatRaising.UI;
 
 namespace CatRaising.Core
 {
@@ -144,6 +145,11 @@ namespace CatRaising.Core
         /// </summary>
         private void OnGroundTap()
         {
+            // Don't call the cat while placing or removing furniture
+            var furnitureUI = FindAnyObjectByType<FurniturePlacementUI>();
+            if (furnitureUI != null && furnitureUI.IsInPlacementMode)
+                return;
+
             Vector2 worldPos = TouchInput.WorldPosition;
 
             if (catAI != null)

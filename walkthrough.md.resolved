@@ -1,231 +1,2070 @@
-# UI Polish & System Rework — Setup Walkthrough
+# Walkthrough: Furniture System Improvements + Fishing Score Popups
 
-## Summary of Changes
+## Files Modified
 
-| # | Change | Files Modified/Created |
-|---|---|---|
-| 1 | Room selection panel + fade transition | `RoomSwitcherUI.cs` (rewritten), `ScreenFader.cs` (new) |
-| 2 | Food/water bowls as grid furniture | `FoodBowl.cs`, `WaterBowl.cs`, `CatAI.cs` |
-| 3 | Claim buttons for tasks & achievements | `DailyTaskManager.cs`, `DailyTaskUI.cs`, `AchievementManager.cs`, `AchievementUI.cs`, `GameData.cs` |
-| 4 | Grid layout (4 items/row) for shop & inventory | *(Unity Editor change — see instructions below)* |
-| 5 | Click-to-lock furniture placement | `FurniturePlacementUI.cs` (rewritten) |
-| 6 | Fishing mini-game as UI overlay | `CatFishingGame.cs` (rewritten), `FishUI.cs` (new), `FishSpawner.cs` (rewritten) |
+### 1. [FurnitureInstance.cs](file:///d:/Project/CatRaising/Assets/Scripts/Interactables/FurnitureInstance.cs)
+
+**Sprite loading fix**: `Setup()` is called immediately after `Instantiate()`, before `Start()` runs. `spriteRenderer` was only assigned in `Start()`, so it was null when `Setup()` tried to set the sprite. Fixed by eagerly calling `GetComponentInChildren<SpriteRenderer>()` in `Setup()` if `spriteRenderer` is null.
+
+```diff:FurnitureInstance.cs
+using UnityEngine;
+using CatRaising.Cat;
+using CatRaising.Core;
+
+namespace CatRaising.Interactables
+{
+    /// <summary>
+    /// Runtime component for placed furniture. Sits on the isometric grid
+    /// and handles cat proximity interaction.
+    /// </summary>
+    [RequireComponent(typeof(SpriteRenderer))]
+    [RequireComponent(typeof(Collider2D))]
+    public class FurnitureInstance : MonoBehaviour
+    {
+        [Header("Configuration")]
+        [SerializeField] private string itemId;
+        [SerializeField] private string roomId;
+        [SerializeField] private FurnitureInteractionType interactionType;
+
+        [Header("Grid Position")]
+        [SerializeField] private Vector2Int gridPosition;  // Anchor cell (top-left)
+        [SerializeField] private Vector2Int gridSize = Vector2Int.one;
+
+        [Header("Cat Interaction")]
+        [Tooltip("How close the cat must be to interact")]
+        [SerializeField] private float interactionRange = 1.2f;
+        [Tooltip("How long the cat interacts (seconds)")]
+        [SerializeField] private float interactionDuration = 5f;
+        [Tooltip("Happiness gained from interaction")]
+        [SerializeField] private float happinessGain = 3f;
+        [Tooltip("Cleanliness change (negative for scratch)")]
+        [SerializeField] private float cleanlinessChange = 0f;
+
+        [Header("References")]
+        [SerializeField] private SpriteRenderer spriteRenderer;
+
+        private CatController _catController;
+        private CatNeeds _catNeeds;
+        private float _interactionTimer;
+        private bool _catIsInteracting;
+
+        public string ItemId => itemId;
+        public string RoomId => roomId;
+        public Vector2Int GridPosition => gridPosition;
+        public Vector2Int GridSize => gridSize;
+        public FurnitureInteractionType InteractionType => interactionType;
+
+        private void Start()
+        {
+            if (spriteRenderer == null) spriteRenderer = GetComponent<SpriteRenderer>();
+            _catController = FindAnyObjectByType<CatController>();
+            _catNeeds = FindAnyObjectByType<CatNeeds>();
+        }
+
+        private void Update()
+        {
+            if (_catController == null || _catNeeds == null) return;
+            if (interactionType == FurnitureInteractionType.None) return;
+
+            float distance = Vector2.Distance(transform.position, _catController.transform.position);
+
+            if (!_catIsInteracting && distance < interactionRange &&
+                _catController.CurrentState == CatController.CatState.Idle)
+            {
+                if (Random.value < 0.002f)
+                    StartInteraction();
+            }
+
+            if (_catIsInteracting)
+            {
+                _interactionTimer += Time.deltaTime;
+                if (_interactionTimer >= interactionDuration)
+                    EndInteraction();
+            }
+        }
+
+        private void StartInteraction()
+        {
+            _catIsInteracting = true;
+            _interactionTimer = 0f;
+
+            if (_catController.CatAnimator != null)
+                _catController.CatAnimator.FacePosition(transform.position);
+
+            Debug.Log($"[Furniture] Cat interacting with {itemId} ({interactionType})");
+        }
+
+        private void EndInteraction()
+        {
+            _catIsInteracting = false;
+
+            if (_catNeeds != null)
+            {
+                if (happinessGain != 0)
+                    _catNeeds.IncreaseHappiness(happinessGain);
+                if (cleanlinessChange > 0)
+                    _catNeeds.IncreaseCleanliness(cleanlinessChange);
+                else if (cleanlinessChange < 0)
+                    _catNeeds.DecreaseCleanliness(-cleanlinessChange);
+            }
+        }
+
+        /// <summary>
+        /// Configure this instance at runtime (when spawned from placement).
+        /// Overload with grid position and size for isometric placement.
+        /// </summary>
+        public void Setup(string id, string room, Sprite sprite, FurnitureInteractionType type,
+                          Vector2Int gridPos, Vector2Int size)
+        {
+            itemId = id;
+            roomId = room;
+            interactionType = type;
+            gridPosition = gridPos;
+            gridSize = size;
+
+            if (spriteRenderer != null && sprite != null)
+                spriteRenderer.sprite = sprite;
+
+            // Set interaction parameters based on type
+            switch (type)
+            {
+                case FurnitureInteractionType.SitOn:
+                    happinessGain = 2f; cleanlinessChange = 0f; interactionDuration = 8f; break;
+                case FurnitureInteractionType.SleepOn:
+                    happinessGain = 5f; cleanlinessChange = 0f; interactionDuration = 15f; break;
+                case FurnitureInteractionType.Scratch:
+                    happinessGain = 4f; cleanlinessChange = -1f; interactionDuration = 4f; break;
+                case FurnitureInteractionType.PlayWith:
+                    happinessGain = 6f; cleanlinessChange = -0.5f; interactionDuration = 6f; break;
+                case FurnitureInteractionType.HideIn:
+                    happinessGain = 3f; cleanlinessChange = 0f; interactionDuration = 10f; break;
+            }
+        }
+
+        /// <summary>
+        /// Legacy overload without grid data (kept for compatibility).
+        /// </summary>
+        public void Setup(string id, string room, Sprite sprite, FurnitureInteractionType type)
+        {
+            Setup(id, room, sprite, type, Vector2Int.zero, Vector2Int.one);
+        }
+
+        /// <summary>
+        /// Release occupied tiles on the grid when this furniture is removed.
+        /// </summary>
+        private void OnDestroy()
+        {
+            if (IsometricGrid.Instance != null && gridSize.x > 0 && gridSize.y > 0)
+            {
+                IsometricGrid.Instance.SetTilesOccupied(gridPosition, gridSize, false);
+            }
+        }
+    }
+}
+===
+using UnityEngine;
+using CatRaising.Cat;
+using CatRaising.Core;
+
+namespace CatRaising.Interactables
+{
+    /// <summary>
+    /// Runtime component for placed furniture. Sits on the isometric grid
+    /// and handles cat proximity interaction.
+    /// </summary>
+    [RequireComponent(typeof(SpriteRenderer))]
+    [RequireComponent(typeof(Collider2D))]
+    public class FurnitureInstance : MonoBehaviour
+    {
+        [Header("Configuration")]
+        [SerializeField] private string itemId;
+        [SerializeField] private string roomId;
+        [SerializeField] private FurnitureInteractionType interactionType;
+
+        [Header("Grid Position")]
+        [SerializeField] private Vector2Int gridPosition;  // Anchor cell (top-left)
+        [SerializeField] private Vector2Int gridSize = Vector2Int.one;
+
+        [Header("Cat Interaction")]
+        [Tooltip("How close the cat must be to interact")]
+        [SerializeField] private float interactionRange = 1.2f;
+        [Tooltip("How long the cat interacts (seconds)")]
+        [SerializeField] private float interactionDuration = 5f;
+        [Tooltip("Happiness gained from interaction")]
+        [SerializeField] private float happinessGain = 3f;
+        [Tooltip("Cleanliness change (negative for scratch)")]
+        [SerializeField] private float cleanlinessChange = 0f;
+
+        [Header("References")]
+        [SerializeField] private SpriteRenderer spriteRenderer;
+
+        private CatController _catController;
+        private CatNeeds _catNeeds;
+        private float _interactionTimer;
+        private bool _catIsInteracting;
+
+        public string ItemId => itemId;
+        public string RoomId => roomId;
+        public Vector2Int GridPosition => gridPosition;
+        public Vector2Int GridSize => gridSize;
+        public FurnitureInteractionType InteractionType => interactionType;
+
+        private void Start()
+        {
+            if (spriteRenderer == null) spriteRenderer = GetComponent<SpriteRenderer>();
+            _catController = FindAnyObjectByType<CatController>();
+            _catNeeds = FindAnyObjectByType<CatNeeds>();
+        }
+
+        private void Update()
+        {
+            if (_catController == null || _catNeeds == null) return;
+            if (interactionType == FurnitureInteractionType.None) return;
+
+            float distance = Vector2.Distance(transform.position, _catController.transform.position);
+
+            if (!_catIsInteracting && distance < interactionRange &&
+                _catController.CurrentState == CatController.CatState.Idle)
+            {
+                if (Random.value < 0.002f)
+                    StartInteraction();
+            }
+
+            if (_catIsInteracting)
+            {
+                _interactionTimer += Time.deltaTime;
+                if (_interactionTimer >= interactionDuration)
+                    EndInteraction();
+            }
+        }
+
+        private void StartInteraction()
+        {
+            _catIsInteracting = true;
+            _interactionTimer = 0f;
+
+            if (_catController.CatAnimator != null)
+                _catController.CatAnimator.FacePosition(transform.position);
+
+            Debug.Log($"[Furniture] Cat interacting with {itemId} ({interactionType})");
+        }
+
+        private void EndInteraction()
+        {
+            _catIsInteracting = false;
+
+            if (_catNeeds != null)
+            {
+                if (happinessGain != 0)
+                    _catNeeds.IncreaseHappiness(happinessGain);
+                if (cleanlinessChange > 0)
+                    _catNeeds.IncreaseCleanliness(cleanlinessChange);
+                else if (cleanlinessChange < 0)
+                    _catNeeds.DecreaseCleanliness(-cleanlinessChange);
+            }
+        }
+
+        /// <summary>
+        /// Configure this instance at runtime (when spawned from placement).
+        /// Overload with grid position and size for isometric placement.
+        /// </summary>
+        public void Setup(string id, string room, Sprite sprite, FurnitureInteractionType type,
+                          Vector2Int gridPos, Vector2Int size)
+        {
+            itemId = id;
+            roomId = room;
+            interactionType = type;
+            gridPosition = gridPos;
+            gridSize = size;
+
+            if (spriteRenderer == null)
+                spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+
+            if (spriteRenderer != null && sprite != null)
+                spriteRenderer.sprite = sprite;
+
+            // Set interaction parameters based on type
+            switch (type)
+            {
+                case FurnitureInteractionType.SitOn:
+                    happinessGain = 2f; cleanlinessChange = 0f; interactionDuration = 8f; break;
+                case FurnitureInteractionType.SleepOn:
+                    happinessGain = 5f; cleanlinessChange = 0f; interactionDuration = 15f; break;
+                case FurnitureInteractionType.Scratch:
+                    happinessGain = 4f; cleanlinessChange = -1f; interactionDuration = 4f; break;
+                case FurnitureInteractionType.PlayWith:
+                    happinessGain = 6f; cleanlinessChange = -0.5f; interactionDuration = 6f; break;
+                case FurnitureInteractionType.HideIn:
+                    happinessGain = 3f; cleanlinessChange = 0f; interactionDuration = 10f; break;
+            }
+        }
+
+        /// <summary>
+        /// Legacy overload without grid data (kept for compatibility).
+        /// </summary>
+        public void Setup(string id, string room, Sprite sprite, FurnitureInteractionType type)
+        {
+            Setup(id, room, sprite, type, Vector2Int.zero, Vector2Int.one);
+        }
+
+        /// <summary>
+        /// Release occupied tiles on the grid when this furniture is removed.
+        /// </summary>
+        private void OnDestroy()
+        {
+            if (IsometricGrid.Instance != null && gridSize.x > 0 && gridSize.y > 0)
+            {
+                IsometricGrid.Instance.SetTilesOccupied(gridPosition, gridSize, false);
+            }
+        }
+    }
+}
+```
 
 ---
 
-## 1. Room Selection Panel + Fade Transition
+### 2. [FurniturePlacementUI.cs](file:///d:/Project/CatRaising/Assets/Scripts/UI/FurniturePlacementUI.cs)
 
-### ScreenFader Setup
-1. In Canvas, create an **Image** named "ScreenFade"
-   - Color: **black** (0, 0, 0, 0) — starts transparent
-   - Stretch to fill entire screen
-   - Raycast Target: **off** (script manages this)
-   - Set **Sibling Order** to last (renders on top)
-2. Create a **ScreenFader** GameObject → add `ScreenFader` component
-3. Assign the black Image to `Fade Image`
+Major changes covering 4 features:
 
-### Room Selector Panel
-Replace the old left/right arrows with:
-```
-📁 Canvas
-└── 📁 RoomSelectionPanel (hidden by default)
-    ├── 📜 RoomSwitcherUI (script)
-    ├── 📝 Title — "Select Room"
-    ├── 📁 ScrollView → Content (VerticalLayoutGroup)
-    └── 🔘 CloseButton — "✕"
-```
-
-**Room Slot Prefab**: Create a Button with:
-- `TMP_Text[0]` — room name
-- `TMP_Text[1]` — status ("Current" / "Go" / "🔒 500 🐾")
-- Optional `CanvasGroup` for dimming locked/current rooms
-
-Add a **"🏠 Rooms"** HUD button that calls `RoomSwitcherUI.Open()`.
-
----
-
-## 2. Food & Water Bowls as Grid Furniture
-
-In the Inspector for **FoodBowl** and **WaterBowl**:
-
-| Field | Value |
+| Feature | How it works |
 |---|---|
-| Grid Position | The iso grid cell where the bowl sits (e.g. `(2, 3)`) |
-| Grid Size | `(1, 1)` — bowls occupy 1 tile |
+| **Unlimited placement** | Removed the `IsItemPlacedInCurrentRoom()` guard — button always clickable. Shows "Placed: N" count instead of locking out. |
+| **Remove mode** | New `Removing` state in the FSM. Tile highlight follows cursor in red. Click on a tile → finds furniture whose footprint includes that cell → removes save data, destroys object. Stays in remove mode for multi-delete. Cancel button exits. |
+| **Hide inventory** | `placementPanel` hidden when entering placing/removing. Re-shown when confirming, cancelling, or exiting remove mode. |
+| **Disable cat interaction** | `CatInteraction` + `CatAI` found via `FindAnyObjectByType` in `Start()`. Disabled on entering placing/removing mode, re-enabled on exit. New `IsInPlacementMode` public property exposed for CameraController. |
 
-> [!IMPORTANT]
-> **Position the bowl GameObject** so its world position matches `IsometricGrid.GridToWorld(gridPosition)`. The bowl registers itself on the grid at Start and releases on Destroy.
+```diff:FurniturePlacementUI.cs
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+using CatRaising.Core;
+using CatRaising.Data;
+using CatRaising.Interactables;
+using CatRaising.Systems;
 
-The **cat walks to the nearest walkable tile adjacent to the bowl** to eat/drink — it no longer walks directly onto the bowl's tile.
+namespace CatRaising.UI
+{
+    /// <summary>
+    /// Isometric furniture placement with click-to-lock behavior.
+    /// 
+    /// Flow: Select item → ghost follows cursor → click valid tile to LOCK ghost →
+    ///       Confirm places furniture / Cancel releases ghost.
+    /// 
+    /// SETUP:
+    /// 1. Create "FurniturePlacementPanel" with inventory ScrollView + confirm/cancel
+    /// 2. For grid layout in inventory: use GridLayoutGroup (4 columns) on the ScrollView Content
+    /// 3. Assign furniture prefab (SpriteRenderer + FurnitureInstance)
+    /// 4. Ensure IsometricGrid is in scene
+    /// </summary>
+    public class FurniturePlacementUI : MonoBehaviour
+    {
+        [Header("UI References")]
+        [SerializeField] private GameObject placementPanel;
+        [SerializeField] private Button closeButton;
+        [SerializeField] private Button confirmButton;
+        [SerializeField] private Button cancelButton;
+        [SerializeField] private Button removeButton;
+        [SerializeField] private Transform inventoryContent; // Should have GridLayoutGroup
+        [SerializeField] private GameObject inventorySlotPrefab;
+
+        [Header("Placement")]
+        [SerializeField] private GameObject furniturePrefab;
+        [SerializeField] private Color validColor = new Color(0.5f, 1f, 0.5f, 0.7f);
+        [SerializeField] private Color invalidColor = new Color(1f, 0.5f, 0.5f, 0.7f);
+        [SerializeField] private Color lockedColor = new Color(0.7f, 1f, 0.7f, 0.9f);
+
+        [Header("Tile Highlight (Optional)")]
+        [SerializeField] private GameObject tileHighlightPrefab;
+
+        [Header("References")]
+        [SerializeField] private ShopUI shopUI;
+
+        // States
+        private enum PlacementState { Idle, Following, Locked }
+        private PlacementState _state = PlacementState.Idle;
+
+        private GameObject _ghostFurniture;
+        private ShopUI.ShopItem _selectedItem;
+        private Vector2Int _ghostGridPos;
+        private List<GameObject> _placedFurnitureObjects = new List<GameObject>();
+        private List<GameObject> _inventorySlots = new List<GameObject>();
+        private List<GameObject> _tileHighlights = new List<GameObject>();
+
+        private void Start()
+        {
+            if (closeButton != null) closeButton.onClick.AddListener(Close);
+            if (confirmButton != null) confirmButton.onClick.AddListener(ConfirmPlacement);
+            if (cancelButton != null) cancelButton.onClick.AddListener(CancelPlacement);
+            if (removeButton != null) removeButton.onClick.AddListener(RemoveSelectedFurniture);
+
+            if (placementPanel != null) placementPanel.SetActive(false);
+            HidePlacementButtons();
+        }
+
+        private void Update()
+        {
+            if (_state == PlacementState.Following && _ghostFurniture != null)
+            {
+                UpdateGhostFollowing();
+
+                // Click on a valid tile to lock
+                if (Input.GetMouseButtonDown(0) && !TouchInput.IsOverUI)
+                {
+                    TryLockGhost();
+                }
+            }
+        }
+
+        public void Open()
+        {
+            if (placementPanel != null) placementPanel.SetActive(true);
+            LoadPlacedFurniture();
+            RefreshInventory();
+        }
+
+        public void Close()
+        {
+            CancelPlacement();
+            if (placementPanel != null) placementPanel.SetActive(false);
+        }
+
+        // ─── Placement Flow ─────────────────────────────────────
+
+        private void StartPlacing(ShopUI.ShopItem item)
+        {
+            CancelPlacement();
+            _selectedItem = item;
+            _state = PlacementState.Following;
+
+            if (furniturePrefab != null)
+            {
+                _ghostFurniture = Instantiate(furniturePrefab);
+                var sr = _ghostFurniture.GetComponentInChildren<SpriteRenderer>();
+                if (sr != null && item.itemSprite != null)
+                {
+                    sr.sprite = item.itemSprite;
+                    sr.color = validColor;
+                }
+
+                var col = _ghostFurniture.GetComponentInChildren<Collider2D>();
+                if (col != null) col.enabled = false;
+
+                var fi = _ghostFurniture.GetComponentInChildren<FurnitureInstance>();
+                if (fi != null) fi.enabled = false;
+            }
+
+            // Show cancel but NOT confirm yet
+            if (cancelButton != null) cancelButton.gameObject.SetActive(true);
+            if (confirmButton != null) confirmButton.gameObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// Ghost follows cursor, snapping to isometric grid tiles.
+        /// </summary>
+        private void UpdateGhostFollowing()
+        {
+            if (_ghostFurniture == null || IsometricGrid.Instance == null) return;
+
+            var grid = IsometricGrid.Instance;
+            Vector2 worldPos = TouchInput.WorldPosition;
+            Vector2Int cell = grid.WorldToGrid(worldPos);
+
+            _ghostGridPos = cell;
+            Vector3 anchorWorld = CalculateAnchorWorld(grid, cell);
+            _ghostFurniture.transform.position = anchorWorld;
+
+            bool valid = IsValidPlacement(cell);
+            var sr = _ghostFurniture.GetComponentInChildren<SpriteRenderer>();
+            if (sr != null)
+                sr.color = valid ? validColor : invalidColor;
+
+            UpdateTileHighlights(cell, valid);
+        }
+
+        /// <summary>
+        /// Click on a valid tile to lock the ghost in place.
+        /// </summary>
+        private void TryLockGhost()
+        {
+            if (IsometricGrid.Instance == null || _selectedItem == null) return;
+
+            Vector2Int cell = _ghostGridPos;
+
+            if (IsValidPlacement(cell))
+            {
+                // Lock ghost at this position
+                _state = PlacementState.Locked;
+
+                var sr = _ghostFurniture.GetComponentInChildren<SpriteRenderer>();
+                if (sr != null)
+                    sr.color = lockedColor;
+
+                // Now show both confirm and cancel
+                if (confirmButton != null) confirmButton.gameObject.SetActive(true);
+                if (cancelButton != null) cancelButton.gameObject.SetActive(true);
+
+                Debug.Log($"[Furniture] Ghost locked at grid ({cell.x}, {cell.y}). Confirm or Cancel.");
+            }
+        }
+
+        private void ConfirmPlacement()
+        {
+            if (_state != PlacementState.Locked || _ghostFurniture == null || _selectedItem == null) return;
+            if (IsometricGrid.Instance == null) return;
+
+            if (!IsValidPlacement(_ghostGridPos))
+            {
+                Debug.Log("[Furniture] Invalid — tiles occupied or out of bounds!");
+                return;
+            }
+
+            var grid = IsometricGrid.Instance;
+            grid.SetTilesOccupied(_ghostGridPos, _selectedItem.gridSize, true);
+
+            var saveData = new FurnitureSaveData
+            {
+                itemId = _selectedItem.itemId,
+                roomId = RoomManager.Instance?.CurrentRoomId ?? "living_room",
+                gridCol = _ghostGridPos.x,
+                gridRow = _ghostGridPos.y
+            };
+
+            if (GameManager.Instance?.Data != null)
+                GameManager.Instance.Data.placedFurniture.Add(saveData);
+
+            // Convert ghost to real furniture
+            var sr = _ghostFurniture.GetComponentInChildren<SpriteRenderer>();
+            if (sr != null) sr.color = Color.white;
+
+            var col = _ghostFurniture.GetComponentInChildren<Collider2D>();
+            if (col != null) col.enabled = true;
+
+            var fi = _ghostFurniture.GetComponentInChildren<FurnitureInstance>();
+            if (fi != null)
+            {
+                fi.enabled = true;
+                fi.Setup(_selectedItem.itemId, saveData.roomId, _selectedItem.itemSprite,
+                         _selectedItem.catInteraction, _ghostGridPos, _selectedItem.gridSize);
+            }
+
+            _placedFurnitureObjects.Add(_ghostFurniture);
+
+            Debug.Log($"[Furniture] Placed at grid ({_ghostGridPos.x}, {_ghostGridPos.y})");
+
+            _ghostFurniture = null;
+            _selectedItem = null;
+            _state = PlacementState.Idle;
+
+            ClearTileHighlights();
+            HidePlacementButtons();
+
+            if (AchievementManager.Instance != null)
+                AchievementManager.Instance.CheckAll();
+
+            RefreshInventory();
+        }
+
+        private void CancelPlacement()
+        {
+            if (_ghostFurniture != null)
+            {
+                Destroy(_ghostFurniture);
+                _ghostFurniture = null;
+            }
+            _state = PlacementState.Idle;
+            _selectedItem = null;
+
+            ClearTileHighlights();
+            HidePlacementButtons();
+        }
+
+        private void HidePlacementButtons()
+        {
+            if (confirmButton != null) confirmButton.gameObject.SetActive(false);
+            if (cancelButton != null) cancelButton.gameObject.SetActive(false);
+        }
+
+        private void RemoveSelectedFurniture()
+        {
+            Debug.Log("[Furniture] Remove mode: tap a placed furniture to pick it up.");
+        }
+
+        // ─── Helpers ────────────────────────────────────────────
+
+        private Vector3 CalculateAnchorWorld(IsometricGrid grid, Vector2Int cell)
+        {
+            Vector3 anchor = grid.GridToWorld(cell);
+            if (_selectedItem != null && (_selectedItem.gridSize.x > 1 || _selectedItem.gridSize.y > 1))
+            {
+                Vector3 endWorld = grid.GridToWorld(cell.x + _selectedItem.gridSize.x - 1,
+                                                     cell.y + _selectedItem.gridSize.y - 1);
+                anchor = (anchor + endWorld) * 0.5f;
+            }
+            return anchor;
+        }
+
+        private bool IsValidPlacement(Vector2Int cell)
+        {
+            if (IsometricGrid.Instance == null || _selectedItem == null) return false;
+            return IsometricGrid.Instance.CanPlaceFurniture(cell, _selectedItem.gridSize);
+        }
+
+        private void UpdateTileHighlights(Vector2Int anchor, bool valid)
+        {
+            ClearTileHighlights();
+            if (tileHighlightPrefab == null || IsometricGrid.Instance == null || _selectedItem == null) return;
+
+            var grid = IsometricGrid.Instance;
+            Color c = valid ? validColor : invalidColor;
+
+            for (int col = anchor.x; col < anchor.x + _selectedItem.gridSize.x; col++)
+                for (int row = anchor.y; row < anchor.y + _selectedItem.gridSize.y; row++)
+                {
+                    Vector3 pos = grid.GridToWorld(col, row);
+                    var h = Instantiate(tileHighlightPrefab, pos, Quaternion.identity);
+                    var sr = h.GetComponent<SpriteRenderer>();
+                    if (sr != null) sr.color = c;
+                    _tileHighlights.Add(h);
+                }
+        }
+
+        private void ClearTileHighlights()
+        {
+            foreach (var h in _tileHighlights)
+                if (h != null) Destroy(h);
+            _tileHighlights.Clear();
+        }
+
+        // ─── Loading & Spawning ─────────────────────────────────
+
+        public void LoadPlacedFurniture()
+        {
+            foreach (var obj in _placedFurnitureObjects)
+                if (obj != null) Destroy(obj);
+            _placedFurnitureObjects.Clear();
+
+            if (IsometricGrid.Instance != null)
+                IsometricGrid.Instance.ClearAllOccupancy();
+
+            if (GameManager.Instance?.Data == null || furniturePrefab == null) return;
+
+            string currentRoom = RoomManager.Instance?.CurrentRoomId ?? "living_room";
+            var grid = IsometricGrid.Instance;
+
+            foreach (var save in GameManager.Instance.Data.placedFurniture)
+            {
+                if (save.roomId != currentRoom) continue;
+
+                var item = shopUI?.GetItem(save.itemId);
+                if (item == null) continue;
+
+                Vector2Int cell = new Vector2Int(save.gridCol, save.gridRow);
+
+                Vector3 worldPos;
+                if (grid != null)
+                {
+                    worldPos = grid.GridToWorld(cell);
+                    if (item.gridSize.x > 1 || item.gridSize.y > 1)
+                    {
+                        Vector3 endPos = grid.GridToWorld(cell.x + item.gridSize.x - 1,
+                                                          cell.y + item.gridSize.y - 1);
+                        worldPos = (worldPos + endPos) * 0.5f;
+                    }
+                    grid.SetTilesOccupied(cell, item.gridSize, true);
+                }
+                else
+                {
+                    worldPos = Vector3.zero;
+                }
+
+                var obj = Instantiate(furniturePrefab, worldPos, Quaternion.identity);
+                var fi = obj.GetComponent<FurnitureInstance>();
+                if (fi != null)
+                    fi.Setup(save.itemId, save.roomId, item.itemSprite,
+                             item.catInteraction, cell, item.gridSize);
+
+                _placedFurnitureObjects.Add(obj);
+            }
+        }
+
+        // ─── Inventory ──────────────────────────────────────────
+
+        private void RefreshInventory()
+        {
+            foreach (var slot in _inventorySlots)
+                if (slot != null) Destroy(slot);
+            _inventorySlots.Clear();
+
+            if (shopUI == null || inventoryContent == null || inventorySlotPrefab == null) return;
+
+            var owned = shopUI.GetOwnedFurniture();
+            foreach (var item in owned)
+            {
+                bool placed = IsItemPlacedInCurrentRoom(item.itemId);
+
+                var slotObj = Instantiate(inventorySlotPrefab, inventoryContent);
+                _inventorySlots.Add(slotObj);
+
+                var texts = slotObj.GetComponentsInChildren<TextMeshProUGUI>();
+                if (texts.Length >= 1) texts[0].text = item.itemName;
+                if (texts.Length >= 2) texts[1].text = placed ? "Placed" : "Tap to place";
+
+                var btn = slotObj.GetComponent<Button>();
+                if (btn != null && !placed)
+                {
+                    var capturedItem = item;
+                    btn.onClick.AddListener(() => StartPlacing(capturedItem));
+                }
+            }
+        }
+
+        private bool IsItemPlacedInCurrentRoom(string itemId)
+        {
+            if (GameManager.Instance?.Data == null) return false;
+            string currentRoom = RoomManager.Instance?.CurrentRoomId ?? "living_room";
+            foreach (var save in GameManager.Instance.Data.placedFurniture)
+                if (save.itemId == itemId && save.roomId == currentRoom) return true;
+            return false;
+        }
+    }
+}
+===
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
+using CatRaising.Core;
+using CatRaising.Data;
+using CatRaising.Interactables;
+using CatRaising.Systems;
+using CatRaising.Cat;
+
+namespace CatRaising.UI
+{
+    /// <summary>
+    /// Isometric furniture placement with click-to-lock behavior.
+    /// 
+    /// Flow: Select item → ghost follows cursor → click valid tile to LOCK ghost →
+    ///       Confirm places furniture / Cancel releases ghost.
+    /// 
+    /// SETUP:
+    /// 1. Create "FurniturePlacementPanel" with inventory ScrollView + confirm/cancel
+    /// 2. For grid layout in inventory: use GridLayoutGroup (4 columns) on the ScrollView Content
+    /// 3. Assign furniture prefab (SpriteRenderer + FurnitureInstance)
+    /// 4. Ensure IsometricGrid is in scene
+    /// </summary>
+    public class FurniturePlacementUI : MonoBehaviour
+    {
+        [Header("UI References")]
+        [SerializeField] private GameObject placementPanel;
+        [SerializeField] private Button closeButton;
+        [SerializeField] private Button confirmButton;
+        [SerializeField] private Button cancelButton;
+        [SerializeField] private Button removeButton;
+        [SerializeField] private Transform inventoryContent; // Should have GridLayoutGroup
+        [SerializeField] private GameObject inventorySlotPrefab;
+
+        [Header("Placement")]
+        [SerializeField] private GameObject furniturePrefab;
+        [SerializeField] private Color validColor = new Color(0.5f, 1f, 0.5f, 0.7f);
+        [SerializeField] private Color invalidColor = new Color(1f, 0.5f, 0.5f, 0.7f);
+        [SerializeField] private Color lockedColor = new Color(0.7f, 1f, 0.7f, 0.9f);
+        [SerializeField] private Color removeHighlightColor = new Color(1f, 0.3f, 0.3f, 0.7f);
+
+        [Header("Tile Highlight (Optional)")]
+        [SerializeField] private GameObject tileHighlightPrefab;
+
+        [Header("References")]
+        [SerializeField] private ShopUI shopUI;
+
+        // States
+        private enum PlacementState { Idle, Following, Locked, Removing }
+        private PlacementState _state = PlacementState.Idle;
+
+        private GameObject _ghostFurniture;
+        private ShopUI.ShopItem _selectedItem;
+        private Vector2Int _ghostGridPos;
+        private List<GameObject> _placedFurnitureObjects = new List<GameObject>();
+        private List<GameObject> _inventorySlots = new List<GameObject>();
+        private List<GameObject> _tileHighlights = new List<GameObject>();
+
+        // Cat interaction references (disabled during placement/removal)
+        private CatInteraction _catInteraction;
+        private CatAI _catAI;
+
+        /// <summary>
+        /// True when the player is in placing or removing mode.
+        /// Used by CameraController to suppress ground-tap calls to the cat.
+        /// </summary>
+        public bool IsInPlacementMode =>
+            _state == PlacementState.Following ||
+            _state == PlacementState.Locked ||
+            _state == PlacementState.Removing;
+
+        private void Start()
+        {
+            if (closeButton != null) closeButton.onClick.AddListener(Close);
+            if (confirmButton != null) confirmButton.onClick.AddListener(ConfirmPlacement);
+            if (cancelButton != null) cancelButton.onClick.AddListener(CancelPlacement);
+            if (removeButton != null) removeButton.onClick.AddListener(RemoveSelectedFurniture);
+
+            if (placementPanel != null) placementPanel.SetActive(false);
+            HidePlacementButtons();
+
+            // Find cat components for disabling during placement
+            _catInteraction = FindAnyObjectByType<CatInteraction>();
+            _catAI = FindAnyObjectByType<CatAI>();
+        }
+
+        private void Update()
+        {
+            if (_state == PlacementState.Following && _ghostFurniture != null)
+            {
+                UpdateGhostFollowing();
+
+                // Click on a valid tile to lock
+                if (Input.GetMouseButtonDown(0) && !TouchInput.IsOverUI)
+                {
+                    TryLockGhost();
+                }
+            }
+            else if (_state == PlacementState.Removing)
+            {
+                UpdateRemoveHighlight();
+
+                if (Input.GetMouseButtonDown(0) && !TouchInput.IsOverUI)
+                {
+                    TryRemoveFurnitureAtCursor();
+                }
+            }
+        }
+
+        public void Open()
+        {
+            if (placementPanel != null) placementPanel.SetActive(true);
+            LoadPlacedFurniture();
+            RefreshInventory();
+        }
+
+        public void Close()
+        {
+            CancelPlacement();
+            if (placementPanel != null) placementPanel.SetActive(false);
+        }
+
+        // ─── Placement Flow ─────────────────────────────────────
+
+        private void StartPlacing(ShopUI.ShopItem item)
+        {
+            CancelPlacement();
+            _selectedItem = item;
+            _state = PlacementState.Following;
+
+            if (furniturePrefab != null)
+            {
+                _ghostFurniture = Instantiate(furniturePrefab);
+                var sr = _ghostFurniture.GetComponentInChildren<SpriteRenderer>();
+                if (sr != null && item.itemSprite != null)
+                {
+                    sr.sprite = item.itemSprite;
+                    sr.color = validColor;
+                }
+
+                var col = _ghostFurniture.GetComponentInChildren<Collider2D>();
+                if (col != null) col.enabled = false;
+
+                var fi = _ghostFurniture.GetComponentInChildren<FurnitureInstance>();
+                if (fi != null) fi.enabled = false;
+            }
+
+            // Show cancel but NOT confirm yet
+            if (cancelButton != null) cancelButton.gameObject.SetActive(true);
+            if (confirmButton != null) confirmButton.gameObject.SetActive(false);
+
+            // Hide inventory panel so the player can see the grid
+            if (placementPanel != null) placementPanel.SetActive(false);
+
+            // Disable cat interaction while placing
+            SetCatInteractionsEnabled(false);
+        }
+
+        /// <summary>
+        /// Ghost follows cursor, snapping to isometric grid tiles.
+        /// </summary>
+        private void UpdateGhostFollowing()
+        {
+            if (_ghostFurniture == null || IsometricGrid.Instance == null) return;
+
+            var grid = IsometricGrid.Instance;
+            Vector2 worldPos = TouchInput.WorldPosition;
+            Vector2Int cell = grid.WorldToGrid(worldPos);
+
+            _ghostGridPos = cell;
+            Vector3 anchorWorld = CalculateAnchorWorld(grid, cell);
+            _ghostFurniture.transform.position = anchorWorld;
+
+            bool valid = IsValidPlacement(cell);
+            var sr = _ghostFurniture.GetComponentInChildren<SpriteRenderer>();
+            if (sr != null)
+                sr.color = valid ? validColor : invalidColor;
+
+            UpdateTileHighlights(cell, valid);
+        }
+
+        /// <summary>
+        /// Click on a valid tile to lock the ghost in place.
+        /// </summary>
+        private void TryLockGhost()
+        {
+            if (IsometricGrid.Instance == null || _selectedItem == null) return;
+
+            Vector2Int cell = _ghostGridPos;
+
+            if (IsValidPlacement(cell))
+            {
+                // Lock ghost at this position
+                _state = PlacementState.Locked;
+
+                var sr = _ghostFurniture.GetComponentInChildren<SpriteRenderer>();
+                if (sr != null)
+                    sr.color = lockedColor;
+
+                // Now show both confirm and cancel
+                if (confirmButton != null) confirmButton.gameObject.SetActive(true);
+                if (cancelButton != null) cancelButton.gameObject.SetActive(true);
+
+                Debug.Log($"[Furniture] Ghost locked at grid ({cell.x}, {cell.y}). Confirm or Cancel.");
+            }
+        }
+
+        private void ConfirmPlacement()
+        {
+            if (_state != PlacementState.Locked || _ghostFurniture == null || _selectedItem == null) return;
+            if (IsometricGrid.Instance == null) return;
+
+            if (!IsValidPlacement(_ghostGridPos))
+            {
+                Debug.Log("[Furniture] Invalid — tiles occupied or out of bounds!");
+                return;
+            }
+
+            var grid = IsometricGrid.Instance;
+            grid.SetTilesOccupied(_ghostGridPos, _selectedItem.gridSize, true);
+
+            var saveData = new FurnitureSaveData
+            {
+                itemId = _selectedItem.itemId,
+                roomId = RoomManager.Instance?.CurrentRoomId ?? "living_room",
+                gridCol = _ghostGridPos.x,
+                gridRow = _ghostGridPos.y
+            };
+
+            if (GameManager.Instance?.Data != null)
+                GameManager.Instance.Data.placedFurniture.Add(saveData);
+
+            // Convert ghost to real furniture
+            var sr = _ghostFurniture.GetComponentInChildren<SpriteRenderer>();
+            if (sr != null) sr.color = Color.white;
+
+            var col = _ghostFurniture.GetComponentInChildren<Collider2D>();
+            if (col != null) col.enabled = true;
+
+            var fi = _ghostFurniture.GetComponentInChildren<FurnitureInstance>();
+            if (fi != null)
+            {
+                fi.enabled = true;
+                fi.Setup(_selectedItem.itemId, saveData.roomId, _selectedItem.itemSprite,
+                         _selectedItem.catInteraction, _ghostGridPos, _selectedItem.gridSize);
+            }
+
+            _placedFurnitureObjects.Add(_ghostFurniture);
+
+            Debug.Log($"[Furniture] Placed at grid ({_ghostGridPos.x}, {_ghostGridPos.y})");
+
+            _ghostFurniture = null;
+            _selectedItem = null;
+            _state = PlacementState.Idle;
+
+            ClearTileHighlights();
+            HidePlacementButtons();
+
+            // Re-show inventory and re-enable cat interaction
+            if (placementPanel != null) placementPanel.SetActive(true);
+            SetCatInteractionsEnabled(true);
+
+            if (AchievementManager.Instance != null)
+                AchievementManager.Instance.CheckAll();
+
+            RefreshInventory();
+        }
+
+        private void CancelPlacement()
+        {
+            if (_ghostFurniture != null)
+            {
+                Destroy(_ghostFurniture);
+                _ghostFurniture = null;
+            }
+
+            bool wasActive = _state != PlacementState.Idle;
+
+            _state = PlacementState.Idle;
+            _selectedItem = null;
+
+            ClearTileHighlights();
+            HidePlacementButtons();
+
+            // Re-show inventory and re-enable cat interaction if we were in a mode
+            if (wasActive)
+            {
+                if (placementPanel != null) placementPanel.SetActive(true);
+                SetCatInteractionsEnabled(true);
+                RefreshInventory();
+            }
+        }
+
+        private void HidePlacementButtons()
+        {
+            if (confirmButton != null) confirmButton.gameObject.SetActive(false);
+            if (cancelButton != null) cancelButton.gameObject.SetActive(false);
+        }
+
+        // ─── Remove Mode ────────────────────────────────────────
+
+        private void RemoveSelectedFurniture()
+        {
+            // Enter remove mode
+            CancelPlacement(); // clean up any ongoing placement first
+            _state = PlacementState.Removing;
+
+            // Hide inventory panel so the player can see the grid
+            if (placementPanel != null) placementPanel.SetActive(false);
+
+            // Show cancel button to exit remove mode
+            if (cancelButton != null) cancelButton.gameObject.SetActive(true);
+            if (confirmButton != null) confirmButton.gameObject.SetActive(false);
+
+            // Disable cat interaction while removing
+            SetCatInteractionsEnabled(false);
+
+            Debug.Log("[Furniture] Remove mode: tap a tile to remove furniture.");
+        }
+
+        /// <summary>
+        /// Show a red tile highlight under the cursor during remove mode.
+        /// </summary>
+        private void UpdateRemoveHighlight()
+        {
+            if (IsometricGrid.Instance == null) return;
+
+            var grid = IsometricGrid.Instance;
+            Vector2 worldPos = TouchInput.WorldPosition;
+            Vector2Int cell = grid.WorldToGrid(worldPos);
+
+            ClearTileHighlights();
+
+            if (tileHighlightPrefab != null && grid.IsInBounds(cell))
+            {
+                Vector3 pos = grid.GridToWorld(cell);
+                var h = Instantiate(tileHighlightPrefab, pos, Quaternion.identity);
+                var sr = h.GetComponent<SpriteRenderer>();
+                if (sr != null) sr.color = removeHighlightColor;
+                _tileHighlights.Add(h);
+            }
+        }
+
+        /// <summary>
+        /// Check if any placed furniture occupies the clicked tile, and remove it.
+        /// </summary>
+        private void TryRemoveFurnitureAtCursor()
+        {
+            if (IsometricGrid.Instance == null) return;
+
+            var grid = IsometricGrid.Instance;
+            Vector2 worldPos = TouchInput.WorldPosition;
+            Vector2Int cell = grid.WorldToGrid(worldPos);
+
+            // Find a placed furniture whose grid footprint includes this cell
+            for (int i = _placedFurnitureObjects.Count - 1; i >= 0; i--)
+            {
+                var obj = _placedFurnitureObjects[i];
+                if (obj == null) { _placedFurnitureObjects.RemoveAt(i); continue; }
+
+                var fi = obj.GetComponent<FurnitureInstance>();
+                if (fi == null) continue;
+
+                // Check if clicked cell is within this furniture's footprint
+                Vector2Int fPos = fi.GridPosition;
+                Vector2Int fSize = fi.GridSize;
+
+                if (cell.x >= fPos.x && cell.x < fPos.x + fSize.x &&
+                    cell.y >= fPos.y && cell.y < fPos.y + fSize.y)
+                {
+                    // Remove save data
+                    if (GameManager.Instance?.Data != null)
+                    {
+                        var placedList = GameManager.Instance.Data.placedFurniture;
+                        for (int j = placedList.Count - 1; j >= 0; j--)
+                        {
+                            var save = placedList[j];
+                            if (save.itemId == fi.ItemId &&
+                                save.gridCol == fPos.x && save.gridRow == fPos.y)
+                            {
+                                placedList.RemoveAt(j);
+                                break;
+                            }
+                        }
+                    }
+
+                    Debug.Log($"[Furniture] Removed {fi.ItemId} at grid ({fPos.x}, {fPos.y})");
+
+                    // Destroy the object (OnDestroy in FurnitureInstance frees grid tiles)
+                    _placedFurnitureObjects.RemoveAt(i);
+                    Destroy(obj);
+                    break;
+                }
+            }
+        }
+
+        // ─── Cat Interaction Control ─────────────────────────────
+
+        private void SetCatInteractionsEnabled(bool enabled)
+        {
+            if (_catInteraction != null) _catInteraction.enabled = enabled;
+            if (_catAI != null) _catAI.SetAIEnabled(enabled);
+
+            Debug.Log($"[Furniture] Cat interactions {(enabled ? "enabled" : "disabled")}");
+        }
+
+        // ─── Helpers ────────────────────────────────────────────
+
+        private Vector3 CalculateAnchorWorld(IsometricGrid grid, Vector2Int cell)
+        {
+            Vector3 anchor = grid.GridToWorld(cell);
+            if (_selectedItem != null && (_selectedItem.gridSize.x > 1 || _selectedItem.gridSize.y > 1))
+            {
+                Vector3 endWorld = grid.GridToWorld(cell.x + _selectedItem.gridSize.x - 1,
+                                                     cell.y + _selectedItem.gridSize.y - 1);
+                anchor = (anchor + endWorld) * 0.5f;
+            }
+            return anchor;
+        }
+
+        private bool IsValidPlacement(Vector2Int cell)
+        {
+            if (IsometricGrid.Instance == null || _selectedItem == null) return false;
+            return IsometricGrid.Instance.CanPlaceFurniture(cell, _selectedItem.gridSize);
+        }
+
+        private void UpdateTileHighlights(Vector2Int anchor, bool valid)
+        {
+            ClearTileHighlights();
+            if (tileHighlightPrefab == null || IsometricGrid.Instance == null || _selectedItem == null) return;
+
+            var grid = IsometricGrid.Instance;
+            Color c = valid ? validColor : invalidColor;
+
+            for (int col = anchor.x; col < anchor.x + _selectedItem.gridSize.x; col++)
+                for (int row = anchor.y; row < anchor.y + _selectedItem.gridSize.y; row++)
+                {
+                    Vector3 pos = grid.GridToWorld(col, row);
+                    var h = Instantiate(tileHighlightPrefab, pos, Quaternion.identity);
+                    var sr = h.GetComponent<SpriteRenderer>();
+                    if (sr != null) sr.color = c;
+                    _tileHighlights.Add(h);
+                }
+        }
+
+        private void ClearTileHighlights()
+        {
+            foreach (var h in _tileHighlights)
+                if (h != null) Destroy(h);
+            _tileHighlights.Clear();
+        }
+
+        // ─── Loading & Spawning ─────────────────────────────────
+
+        public void LoadPlacedFurniture()
+        {
+            foreach (var obj in _placedFurnitureObjects)
+                if (obj != null) Destroy(obj);
+            _placedFurnitureObjects.Clear();
+
+            if (IsometricGrid.Instance != null)
+                IsometricGrid.Instance.ClearAllOccupancy();
+
+            if (GameManager.Instance?.Data == null || furniturePrefab == null) return;
+
+            string currentRoom = RoomManager.Instance?.CurrentRoomId ?? "living_room";
+            var grid = IsometricGrid.Instance;
+
+            foreach (var save in GameManager.Instance.Data.placedFurniture)
+            {
+                if (save.roomId != currentRoom) continue;
+
+                var item = shopUI?.GetItem(save.itemId);
+                if (item == null) continue;
+
+                Vector2Int cell = new Vector2Int(save.gridCol, save.gridRow);
+
+                Vector3 worldPos;
+                if (grid != null)
+                {
+                    worldPos = grid.GridToWorld(cell);
+                    if (item.gridSize.x > 1 || item.gridSize.y > 1)
+                    {
+                        Vector3 endPos = grid.GridToWorld(cell.x + item.gridSize.x - 1,
+                                                          cell.y + item.gridSize.y - 1);
+                        worldPos = (worldPos + endPos) * 0.5f;
+                    }
+                    grid.SetTilesOccupied(cell, item.gridSize, true);
+                }
+                else
+                {
+                    worldPos = Vector3.zero;
+                }
+
+                var obj = Instantiate(furniturePrefab, worldPos, Quaternion.identity);
+                var fi = obj.GetComponent<FurnitureInstance>();
+                if (fi != null)
+                    fi.Setup(save.itemId, save.roomId, item.itemSprite,
+                             item.catInteraction, cell, item.gridSize);
+
+                _placedFurnitureObjects.Add(obj);
+            }
+        }
+
+        // ─── Inventory ──────────────────────────────────────────
+
+        private void RefreshInventory()
+        {
+            foreach (var slot in _inventorySlots)
+                if (slot != null) Destroy(slot);
+            _inventorySlots.Clear();
+
+            if (shopUI == null || inventoryContent == null || inventorySlotPrefab == null) return;
+
+            var owned = shopUI.GetOwnedFurniture();
+            foreach (var item in owned)
+            {
+                int placedCount = CountItemPlacedInCurrentRoom(item.itemId);
+
+                var slotObj = Instantiate(inventorySlotPrefab, inventoryContent);
+                _inventorySlots.Add(slotObj);
+
+                var texts = slotObj.GetComponentsInChildren<TextMeshProUGUI>();
+                if (texts.Length >= 1) texts[0].text = item.itemName;
+                if (texts.Length >= 2) texts[1].text = placedCount > 0 ? $"Placed: {placedCount}" : "Tap to place";
+
+                var btn = slotObj.GetComponent<Button>();
+                if (btn != null)
+                {
+                    var capturedItem = item;
+                    btn.onClick.AddListener(() => StartPlacing(capturedItem));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Count how many instances of a given item are placed in the current room.
+        /// </summary>
+        private int CountItemPlacedInCurrentRoom(string itemId)
+        {
+            if (GameManager.Instance?.Data == null) return 0;
+            string currentRoom = RoomManager.Instance?.CurrentRoomId ?? "living_room";
+            int count = 0;
+            foreach (var save in GameManager.Instance.Data.placedFurniture)
+                if (save.itemId == itemId && save.roomId == currentRoom) count++;
+            return count;
+        }
+    }
+}
+
+```
 
 ---
 
-## 3. Claim System for Daily Tasks & Achievements
+### 3. [CameraController.cs](file:///d:/Project/CatRaising/Assets/Scripts/Core/CameraController.cs)
 
-### Daily Tasks — Claim Flow
-Tasks are now **completed** by game actions but **rewards require pressing "Claim"**.
+**Suppress ground-tap cat calls during placement**: `OnGroundTap()` now checks `FurniturePlacementUI.IsInPlacementMode` and returns early if the player is in placing or removing mode.
 
-**Task Slot Prefab** needs:
-- `nameText` (TMP) — task name
-- `rewardText` (TMP) — "+20 🐾"
-- `claimButton` (Button) — the interactable Claim/Claimed button
-- `claimButtonText` (TMP) — on the button, shows "Claim", "Claimed", or "..."
-- `checkmark` (Image) — color changes by state
+```diff:CameraController.cs
+using UnityEngine;
+using CatRaising.Cat;
 
-### Achievements — Claim Flow
-Achievement popup still appears when unlocked, but **rewards are only given after claiming** from the achievements list.
+namespace CatRaising.Core
+{
+    /// <summary>
+    /// Controls the main camera:
+    /// - Horizontal swipe to pan the view
+    /// - Smooth zoom toward cat during petting
+    /// - Tap on empty ground to call the cat
+    /// </summary>
+    public class CameraController : MonoBehaviour
+    {
+        public static CameraController Instance { get; private set; }
 
-**List Item Prefab** needs:
-- 3x `TMP_Text` — name, description, reward/status
-- 1x `Button` — Claim button (shows "Claim", "Claimed", or "Locked")
-- Optional `CanvasGroup` — for dimming locked items
+        [Header("References")]
+        [SerializeField] private Camera cam;
+        [SerializeField] private CatAI catAI;
 
-### Red Dot Notifications
-Both `DailyTaskUI` and `AchievementUI` have a **`hudRedDot`** field:
-- Create a small red circle Image (10-15px) on the corner of the HUD button
-- Assign it to the `hudRedDot` field
-- It auto-shows when there are unclaimed rewards
+        [Header("Pan Settings")]
+        [Tooltip("Min and max X position the camera can pan to")]
+        [SerializeField] private float panMinX = -5f;
+        [SerializeField] private float panMaxX = 5f;
+        [Tooltip("Pixels of drag before it counts as a pan (not a tap)")]
+        [SerializeField] private float dragThreshold = 15f;
+        [Tooltip("Pan sensitivity multiplier")]
+        [SerializeField] private float panSensitivity = 1f;
 
-```
-📁 HUD
-├── 🔘 TasksButton
-│   └── 🔴 RedDot (Image, 12x12, red circle)
-├── 🔘 AchievementsButton
-│   └── 🔴 RedDot (Image, 12x12, red circle)
+        [Header("Pet Zoom Settings")]
+        [SerializeField] private float petZoomSize = 3f;
+        [SerializeField] private float zoomSpeed = 3f;
+        [Tooltip("How far above the cat to center when zooming")]
+        [SerializeField] private float zoomYOffset = 0.5f;
+
+        // Internal state
+        private float _defaultOrthoSize;
+        private Vector3 _defaultPosition;
+        private float _targetOrthoSize;
+        private Vector3 _targetPosition;
+
+        // Pan tracking
+        private bool _isTouchActive = false;
+        private bool _isPanning = false;
+        private Vector2 _touchStartScreen;
+        private Vector3 _camStartPos;
+        private float _totalDragPixels;
+
+        // Petting zoom
+        private bool _isPetZooming = false;
+        private Transform _zoomTarget;
+
+        private void Awake()
+        {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            Instance = this;
+
+            if (cam == null) cam = GetComponent<Camera>();
+            if (cam == null) cam = Camera.main;
+        }
+
+        private void Start()
+        {
+            _defaultOrthoSize = cam.orthographicSize;
+            _defaultPosition = transform.position;
+            _targetOrthoSize = _defaultOrthoSize;
+            _targetPosition = _defaultPosition;
+        }
+
+        private void Update()
+        {
+            if (!_isPetZooming)
+            {
+                HandlePanInput();
+            }
+
+            // Smooth zoom/position transitions
+            cam.orthographicSize = Mathf.Lerp(cam.orthographicSize, _targetOrthoSize, zoomSpeed * Time.deltaTime);
+            transform.position = Vector3.Lerp(transform.position, _targetPosition, zoomSpeed * Time.deltaTime);
+        }
+
+        // ─── Pan & Ground Tap ───────────────────────────────────
+
+        private void HandlePanInput()
+        {
+            // Only pan in Hand mode; in Feather mode, DraggableToy handles empty-space input
+            if (ToolModeManager.Instance != null && ToolModeManager.Instance.IsFeatherMode)
+                return;
+
+            if (TouchInput.WasPressedThisFrame)
+            {
+                // Ignore if touch is over a UI element (button, slider, etc.)
+                if (TouchInput.IsOverUI) return;
+
+                // Check if touch is on an interactable — if so, don't process
+                Collider2D hit = Physics2D.OverlapPoint(TouchInput.WorldPosition);
+                if (hit != null) return;
+
+                _isTouchActive = true;
+                _isPanning = false;
+                _touchStartScreen = TouchInput.Position;
+                _camStartPos = transform.position;
+                _totalDragPixels = 0f;
+            }
+
+            if (TouchInput.IsPressed && _isTouchActive)
+            {
+                Vector2 currentScreen = TouchInput.Position;
+                Vector2 delta = currentScreen - _touchStartScreen;
+                _totalDragPixels = delta.magnitude;
+
+                if (_totalDragPixels > dragThreshold)
+                {
+                    _isPanning = true;
+
+                    // Convert screen pixel delta to world units
+                    float worldDeltaX = -delta.x * (cam.orthographicSize * 2f / Screen.height) * panSensitivity;
+
+                    float newX = Mathf.Clamp(_camStartPos.x + worldDeltaX, panMinX, panMaxX);
+                    _targetPosition = new Vector3(newX, _defaultPosition.y, _defaultPosition.z);
+                }
+            }
+
+            if (TouchInput.WasReleasedThisFrame && _isTouchActive)
+            {
+                _isTouchActive = false;
+
+                // Short tap on empty ground → call the cat
+                if (!_isPanning && _totalDragPixels < dragThreshold)
+                {
+                    OnGroundTap();
+                }
+
+                _isPanning = false;
+            }
+        }
+
+        /// <summary>
+        /// Called when the player taps on empty ground (no collider hit).
+        /// Tells the cat to walk to that world position.
+        /// </summary>
+        private void OnGroundTap()
+        {
+            Vector2 worldPos = TouchInput.WorldPosition;
+
+            if (catAI != null)
+            {
+                catAI.WalkToPosition(worldPos);
+                Debug.Log($"[CameraController] Ground tap → calling cat to {worldPos}");
+            }
+        }
+
+        // ─── Pet Zoom ───────────────────────────────────────────
+
+        /// <summary>
+        /// Start zooming the camera toward the cat (called by CatInteraction when petting starts).
+        /// </summary>
+        public void StartPetZoom(Transform target)
+        {
+            _isPetZooming = true;
+            _zoomTarget = target;
+            _targetOrthoSize = petZoomSize;
+
+            if (_zoomTarget != null)
+            {
+                _targetPosition = new Vector3(
+                    _zoomTarget.position.x,
+                    _zoomTarget.position.y + zoomYOffset,
+                    _defaultPosition.z
+                );
+            }
+        }
+
+        /// <summary>
+        /// Stop zooming and return camera to default (called by CatInteraction when petting ends).
+        /// </summary>
+        public void StopPetZoom()
+        {
+            _isPetZooming = false;
+            _zoomTarget = null;
+            _targetOrthoSize = _defaultOrthoSize;
+            _targetPosition = new Vector3(
+                Mathf.Clamp(transform.position.x, panMinX, panMaxX),
+                _defaultPosition.y,
+                _defaultPosition.z
+            );
+        }
+    }
+}
+===
+using UnityEngine;
+using CatRaising.Cat;
+using CatRaising.UI;
+
+namespace CatRaising.Core
+{
+    /// <summary>
+    /// Controls the main camera:
+    /// - Horizontal swipe to pan the view
+    /// - Smooth zoom toward cat during petting
+    /// - Tap on empty ground to call the cat
+    /// </summary>
+    public class CameraController : MonoBehaviour
+    {
+        public static CameraController Instance { get; private set; }
+
+        [Header("References")]
+        [SerializeField] private Camera cam;
+        [SerializeField] private CatAI catAI;
+
+        [Header("Pan Settings")]
+        [Tooltip("Min and max X position the camera can pan to")]
+        [SerializeField] private float panMinX = -5f;
+        [SerializeField] private float panMaxX = 5f;
+        [Tooltip("Pixels of drag before it counts as a pan (not a tap)")]
+        [SerializeField] private float dragThreshold = 15f;
+        [Tooltip("Pan sensitivity multiplier")]
+        [SerializeField] private float panSensitivity = 1f;
+
+        [Header("Pet Zoom Settings")]
+        [SerializeField] private float petZoomSize = 3f;
+        [SerializeField] private float zoomSpeed = 3f;
+        [Tooltip("How far above the cat to center when zooming")]
+        [SerializeField] private float zoomYOffset = 0.5f;
+
+        // Internal state
+        private float _defaultOrthoSize;
+        private Vector3 _defaultPosition;
+        private float _targetOrthoSize;
+        private Vector3 _targetPosition;
+
+        // Pan tracking
+        private bool _isTouchActive = false;
+        private bool _isPanning = false;
+        private Vector2 _touchStartScreen;
+        private Vector3 _camStartPos;
+        private float _totalDragPixels;
+
+        // Petting zoom
+        private bool _isPetZooming = false;
+        private Transform _zoomTarget;
+
+        private void Awake()
+        {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            Instance = this;
+
+            if (cam == null) cam = GetComponent<Camera>();
+            if (cam == null) cam = Camera.main;
+        }
+
+        private void Start()
+        {
+            _defaultOrthoSize = cam.orthographicSize;
+            _defaultPosition = transform.position;
+            _targetOrthoSize = _defaultOrthoSize;
+            _targetPosition = _defaultPosition;
+        }
+
+        private void Update()
+        {
+            if (!_isPetZooming)
+            {
+                HandlePanInput();
+            }
+
+            // Smooth zoom/position transitions
+            cam.orthographicSize = Mathf.Lerp(cam.orthographicSize, _targetOrthoSize, zoomSpeed * Time.deltaTime);
+            transform.position = Vector3.Lerp(transform.position, _targetPosition, zoomSpeed * Time.deltaTime);
+        }
+
+        // ─── Pan & Ground Tap ───────────────────────────────────
+
+        private void HandlePanInput()
+        {
+            // Only pan in Hand mode; in Feather mode, DraggableToy handles empty-space input
+            if (ToolModeManager.Instance != null && ToolModeManager.Instance.IsFeatherMode)
+                return;
+
+            if (TouchInput.WasPressedThisFrame)
+            {
+                // Ignore if touch is over a UI element (button, slider, etc.)
+                if (TouchInput.IsOverUI) return;
+
+                // Check if touch is on an interactable — if so, don't process
+                Collider2D hit = Physics2D.OverlapPoint(TouchInput.WorldPosition);
+                if (hit != null) return;
+
+                _isTouchActive = true;
+                _isPanning = false;
+                _touchStartScreen = TouchInput.Position;
+                _camStartPos = transform.position;
+                _totalDragPixels = 0f;
+            }
+
+            if (TouchInput.IsPressed && _isTouchActive)
+            {
+                Vector2 currentScreen = TouchInput.Position;
+                Vector2 delta = currentScreen - _touchStartScreen;
+                _totalDragPixels = delta.magnitude;
+
+                if (_totalDragPixels > dragThreshold)
+                {
+                    _isPanning = true;
+
+                    // Convert screen pixel delta to world units
+                    float worldDeltaX = -delta.x * (cam.orthographicSize * 2f / Screen.height) * panSensitivity;
+
+                    float newX = Mathf.Clamp(_camStartPos.x + worldDeltaX, panMinX, panMaxX);
+                    _targetPosition = new Vector3(newX, _defaultPosition.y, _defaultPosition.z);
+                }
+            }
+
+            if (TouchInput.WasReleasedThisFrame && _isTouchActive)
+            {
+                _isTouchActive = false;
+
+                // Short tap on empty ground → call the cat
+                if (!_isPanning && _totalDragPixels < dragThreshold)
+                {
+                    OnGroundTap();
+                }
+
+                _isPanning = false;
+            }
+        }
+
+        /// <summary>
+        /// Called when the player taps on empty ground (no collider hit).
+        /// Tells the cat to walk to that world position.
+        /// </summary>
+        private void OnGroundTap()
+        {
+            // Don't call the cat while placing or removing furniture
+            var furnitureUI = FindAnyObjectByType<FurniturePlacementUI>();
+            if (furnitureUI != null && furnitureUI.IsInPlacementMode)
+                return;
+
+            Vector2 worldPos = TouchInput.WorldPosition;
+
+            if (catAI != null)
+            {
+                catAI.WalkToPosition(worldPos);
+                Debug.Log($"[CameraController] Ground tap → calling cat to {worldPos}");
+            }
+        }
+
+        // ─── Pet Zoom ───────────────────────────────────────────
+
+        /// <summary>
+        /// Start zooming the camera toward the cat (called by CatInteraction when petting starts).
+        /// </summary>
+        public void StartPetZoom(Transform target)
+        {
+            _isPetZooming = true;
+            _zoomTarget = target;
+            _targetOrthoSize = petZoomSize;
+
+            if (_zoomTarget != null)
+            {
+                _targetPosition = new Vector3(
+                    _zoomTarget.position.x,
+                    _zoomTarget.position.y + zoomYOffset,
+                    _defaultPosition.z
+                );
+            }
+        }
+
+        /// <summary>
+        /// Stop zooming and return camera to default (called by CatInteraction when petting ends).
+        /// </summary>
+        public void StopPetZoom()
+        {
+            _isPetZooming = false;
+            _zoomTarget = null;
+            _targetOrthoSize = _defaultOrthoSize;
+            _targetPosition = new Vector3(
+                Mathf.Clamp(transform.position.x, panMinX, panMaxX),
+                _defaultPosition.y,
+                _defaultPosition.z
+            );
+        }
+    }
+}
 ```
 
 ---
 
-## 4. Grid Layout for Shop & Inventory (4 per row)
+### 4. [FishUI.cs](file:///d:/Project/CatRaising/Assets/Scripts/MiniGame/FishUI.cs)
 
-This is a **Unity Editor change** — replace `HorizontalLayoutGroup` with `GridLayoutGroup`:
+**Floating score popup**: When a fish is caught, `SpawnScorePopup()` creates a `TextMeshProUGUI` at the fish's position showing "+1" (normal, white, 36pt) or "+3" (golden, gold color, 48pt). The text pops in with a scale animation (0.5→1.2→1.0), floats upward 80px over 1 second, and fades out in the last half-second.
 
-### Shop Panel Content
-1. Select the **ScrollView → Content** under ShopPanel
-2. **Remove** `HorizontalLayoutGroup`
-3. **Add** `GridLayoutGroup` with:
+```diff:FishUI.cs
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.EventSystems;
+using CatRaising.Systems;
 
-| Setting | Value |
-|---|---|
-| Cell Size | `(150, 180)` — adjust to your item card size |
-| Spacing | `(10, 10)` |
-| Start Corner | Upper Left |
-| Start Axis | Horizontal |
-| Constraint | Fixed Column Count |
-| Constraint Count | `4` |
+namespace CatRaising.MiniGame
+{
+    /// <summary>
+    /// UI-based fish that swims across a RectTransform area.
+    /// Uses Image + Button for tap detection instead of world-space colliders.
+    /// 
+    /// SETUP: Create a prefab with Image + Button + FishUI component.
+    /// The prefab will be spawned as a child of the mini-game panel.
+    /// </summary>
+    [RequireComponent(typeof(Image))]
+    [RequireComponent(typeof(Button))]
+    public class FishUI : MonoBehaviour, IPointerClickHandler
+    {
+        [Header("Settings")]
+        [SerializeField] private float swimSpeed = 300f; // pixels per second
+        [SerializeField] private int pointValue = 1;
+        [SerializeField] private bool isGolden = false;
 
-4. Make sure the Content also has `ContentSizeFitter`:
-   - Vertical Fit: **Preferred Size**
+        [Header("Visual")]
+        [SerializeField] private Color normalColor = Color.white;
+        [SerializeField] private Color goldenColor = new Color(1f, 0.85f, 0f);
 
-### Inventory Panel Content (Furniture Placement)
-Same steps on the **inventoryContent** ScrollView Content:
-- `GridLayoutGroup` with ConstraintCount = `4`
-- `ContentSizeFitter` with Vertical Fit = Preferred Size
+        private Image _image;
+        private RectTransform _rectTransform;
+        private Vector2 _direction;
+        private bool _caught = false;
+        private float _bobTimer;
+        private float _bobAmplitude = 8f; // pixels
+        private float _bobSpeed;
+        private float _baseY;
+        private RectTransform _parentRect;
+        private float pulseSpeed = 2f;
+        private Image fishImage;
+        private UIShineSweep shineEffect;
 
----
+        public bool IsCaught => _caught;
 
-## 5. Click-to-Lock Furniture Placement
+        public void Initialize(Vector2 startAnchoredPos, Vector2 direction, float speed, bool golden,
+                               Sprite fishSprite, Sprite goldenFishSprite)
+        {
+            _image = GetComponent<Image>();
+            _rectTransform = GetComponent<RectTransform>();
+            _parentRect = transform.parent as RectTransform;
 
-New 3-state flow:
+            _rectTransform.anchoredPosition = startAnchoredPos;
+            _direction = direction.normalized;
+            swimSpeed = speed;
+            isGolden = golden;
+            pointValue = golden ? 3 : 1;
+            _baseY = startAnchoredPos.y;
+            _bobSpeed = Random.Range(2f, 4f);
+            _bobTimer = Random.Range(0f, Mathf.PI * 2f);
 
+            Vector3 currentScale = _rectTransform.localScale;
+            // Set sprite
+            if (_image != null)
+            {
+                if (golden && goldenFishSprite != null)
+                    _image.sprite = goldenFishSprite;
+                else if (fishSprite != null)
+                    _image.sprite = fishSprite;
+
+                _image.color = golden ? goldenColor : normalColor;
+                _image.SetNativeSize();
+            }
+
+            // Flip based on direction
+            if (_direction.x < 0)
+                _rectTransform.localScale = new Vector3(-currentScale.x, currentScale.y, currentScale.z);
+
+            // Scale variation
+            float scale = golden ? 1.3f : Random.Range(0.8f, 1.2f);
+            _rectTransform.localScale *= scale;
+            
+            shineEffect = GetComponentInChildren<UIShineSweep>();
+            fishImage = GetComponent<Image>();
+
+            if (!golden)
+            {
+                shineEffect.gameObject.SetActive(false);
+            }
+        }
+
+        private void Update()
+        {
+            if (_caught) return;
+
+            // Swim
+            Vector2 pos = _rectTransform.anchoredPosition;
+            pos += _direction * swimSpeed * Time.deltaTime;
+
+            // Bob
+            _bobTimer += Time.deltaTime * _bobSpeed;
+            pos.y = _baseY + Mathf.Sin(_bobTimer) * _bobAmplitude;
+
+            _rectTransform.anchoredPosition = pos;
+
+            if (isGolden)
+            {
+                fishImage.color = Color.Lerp(goldenColor, normalColor, Mathf.PingPong(Time.time * pulseSpeed, 1f));
+            }
+
+            // Destroy if off-screen
+            if (_parentRect != null)
+            {
+                float halfWidth = _parentRect.rect.width * 0.5f + 100f;
+                if (Mathf.Abs(pos.x) > halfWidth)
+                    Destroy(gameObject);
+            }
+        }
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (_caught) return;
+            OnCaught();
+        }
+
+        private void OnCaught()
+        {
+            _caught = true;
+
+            if (MiniGameManager.Instance != null)
+                MiniGameManager.Instance.AddScore(pointValue);
+
+            if (isGolden && AchievementManager.Instance != null)
+                AchievementManager.Instance.TryUnlock(AchievementId.GoldenCatch);
+
+            // Quick shrink + destroy
+            StartCoroutine(CatchAnimation());
+        }
+
+        private System.Collections.IEnumerator CatchAnimation()
+        {
+            float duration = 0.2f;
+            float elapsed = 0f;
+            Vector3 startScale = _rectTransform.localScale;
+            Vector2 startPos = _rectTransform.anchoredPosition;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / duration;
+                _rectTransform.localScale = Vector3.Lerp(startScale, Vector3.zero, t);
+                _rectTransform.anchoredPosition = startPos + Vector2.up * 50f * t;
+                yield return null;
+            }
+
+            Destroy(gameObject);
+        }
+    }
+}
+===
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.EventSystems;
+using CatRaising.Systems;
+
+namespace CatRaising.MiniGame
+{
+    /// <summary>
+    /// UI-based fish that swims across a RectTransform area.
+    /// Uses Image + Button for tap detection instead of world-space colliders.
+    /// 
+    /// SETUP: Create a prefab with Image + Button + FishUI component.
+    /// The prefab will be spawned as a child of the mini-game panel.
+    /// </summary>
+    [RequireComponent(typeof(Image))]
+    [RequireComponent(typeof(Button))]
+    public class FishUI : MonoBehaviour, IPointerClickHandler
+    {
+        [Header("Settings")]
+        [SerializeField] private float swimSpeed = 300f; // pixels per second
+        [SerializeField] private int pointValue = 1;
+        [SerializeField] private bool isGolden = false;
+
+        [Header("Visual")]
+        [SerializeField] private Color normalColor = Color.white;
+        [SerializeField] private Color goldenColor = new Color(1f, 0.85f, 0f);
+
+        private Image _image;
+        private RectTransform _rectTransform;
+        private Vector2 _direction;
+        private bool _caught = false;
+        private float _bobTimer;
+        private float _bobAmplitude = 8f; // pixels
+        private float _bobSpeed;
+        private float _baseY;
+        private RectTransform _parentRect;
+        private float pulseSpeed = 2f;
+        private Image fishImage;
+        private UIShineSweep shineEffect;
+
+        public bool IsCaught => _caught;
+
+        public void Initialize(Vector2 startAnchoredPos, Vector2 direction, float speed, bool golden,
+                               Sprite fishSprite, Sprite goldenFishSprite)
+        {
+            _image = GetComponent<Image>();
+            _rectTransform = GetComponent<RectTransform>();
+            _parentRect = transform.parent as RectTransform;
+
+            _rectTransform.anchoredPosition = startAnchoredPos;
+            _direction = direction.normalized;
+            swimSpeed = speed;
+            isGolden = golden;
+            pointValue = golden ? 3 : 1;
+            _baseY = startAnchoredPos.y;
+            _bobSpeed = Random.Range(2f, 4f);
+            _bobTimer = Random.Range(0f, Mathf.PI * 2f);
+
+            Vector3 currentScale = _rectTransform.localScale;
+            // Set sprite
+            if (_image != null)
+            {
+                if (golden && goldenFishSprite != null)
+                    _image.sprite = goldenFishSprite;
+                else if (fishSprite != null)
+                    _image.sprite = fishSprite;
+
+                _image.color = golden ? goldenColor : normalColor;
+                _image.SetNativeSize();
+            }
+
+            // Flip based on direction
+            if (_direction.x < 0)
+                _rectTransform.localScale = new Vector3(-currentScale.x, currentScale.y, currentScale.z);
+
+            // Scale variation
+            float scale = golden ? 1.3f : Random.Range(0.8f, 1.2f);
+            _rectTransform.localScale *= scale;
+            
+            shineEffect = GetComponentInChildren<UIShineSweep>();
+            fishImage = GetComponent<Image>();
+
+            if (!golden)
+            {
+                shineEffect.gameObject.SetActive(false);
+            }
+        }
+
+        private void Update()
+        {
+            if (_caught) return;
+
+            // Swim
+            Vector2 pos = _rectTransform.anchoredPosition;
+            pos += _direction * swimSpeed * Time.deltaTime;
+
+            // Bob
+            _bobTimer += Time.deltaTime * _bobSpeed;
+            pos.y = _baseY + Mathf.Sin(_bobTimer) * _bobAmplitude;
+
+            _rectTransform.anchoredPosition = pos;
+
+            if (isGolden)
+            {
+                fishImage.color = Color.Lerp(goldenColor, normalColor, Mathf.PingPong(Time.time * pulseSpeed, 1f));
+            }
+
+            // Destroy if off-screen
+            if (_parentRect != null)
+            {
+                float halfWidth = _parentRect.rect.width * 0.5f + 100f;
+                if (Mathf.Abs(pos.x) > halfWidth)
+                    Destroy(gameObject);
+            }
+        }
+
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (_caught) return;
+            OnCaught();
+        }
+
+        private void OnCaught()
+        {
+            _caught = true;
+
+            if (MiniGameManager.Instance != null)
+                MiniGameManager.Instance.AddScore(pointValue);
+
+            if (isGolden && AchievementManager.Instance != null)
+                AchievementManager.Instance.TryUnlock(AchievementId.GoldenCatch);
+
+            // Spawn floating score text
+            SpawnScorePopup();
+
+            // Quick shrink + destroy
+            StartCoroutine(CatchAnimation());
+        }
+
+        /// <summary>
+        /// Creates a floating "+1" or "+3" text at the fish's position that drifts upward and fades out.
+        /// </summary>
+        private void SpawnScorePopup()
+        {
+            if (_parentRect == null) return;
+
+            // Create a new GameObject with TextMeshProUGUI
+            var popupObj = new GameObject("ScorePopup");
+            popupObj.transform.SetParent(_parentRect, false);
+
+            var popupRect = popupObj.AddComponent<RectTransform>();
+            popupRect.anchoredPosition = _rectTransform.anchoredPosition;
+            popupRect.sizeDelta = new Vector2(120f, 60f);
+
+            var popupText = popupObj.AddComponent<TextMeshProUGUI>();
+            popupText.text = isGolden ? "+3" : "+1";
+            popupText.fontSize = isGolden ? 48f : 36f;
+            popupText.color = isGolden ? new Color(1f, 0.85f, 0f) : Color.white;
+            popupText.alignment = TextAlignmentOptions.Center;
+            popupText.fontStyle = FontStyles.Bold;
+            popupText.enableAutoSizing = false;
+
+            // Ensure it renders on top
+            var canvas = popupObj.AddComponent<Canvas>();
+            canvas.overrideSorting = true;
+            canvas.sortingOrder = 999;
+
+            StartCoroutine(FloatingScoreAnimation(popupRect, popupText));
+        }
+
+        private System.Collections.IEnumerator FloatingScoreAnimation(RectTransform rect, TextMeshProUGUI text)
+        {
+            float duration = 1f;
+            float elapsed = 0f;
+            Vector2 startPos = rect.anchoredPosition;
+            Color startColor = text.color;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / duration;
+
+                // Float upward
+                rect.anchoredPosition = startPos + Vector2.up * 80f * t;
+
+                // Fade out in the second half
+                float alpha = t < 0.5f ? 1f : Mathf.Lerp(1f, 0f, (t - 0.5f) * 2f);
+                text.color = new Color(startColor.r, startColor.g, startColor.b, alpha);
+
+                // Scale up slightly at start, then shrink
+                float scale = t < 0.2f ? Mathf.Lerp(0.5f, 1.2f, t / 0.2f) : Mathf.Lerp(1.2f, 1f, (t - 0.2f) / 0.8f);
+                rect.localScale = Vector3.one * scale;
+
+                yield return null;
+            }
+
+            Destroy(rect.gameObject);
+        }
+
+        private System.Collections.IEnumerator CatchAnimation()
+        {
+            float duration = 0.2f;
+            float elapsed = 0f;
+            Vector3 startScale = _rectTransform.localScale;
+            Vector2 startPos = _rectTransform.anchoredPosition;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / duration;
+                _rectTransform.localScale = Vector3.Lerp(startScale, Vector3.zero, t);
+                _rectTransform.anchoredPosition = startPos + Vector2.up * 50f * t;
+                yield return null;
+            }
+
+            Destroy(gameObject);
+        }
+    }
+}
 ```
-┌────────────┐    click valid    ┌────────────┐    Confirm     ┌────────────┐
-│  Following  │ ──── tile ────→  │   Locked    │ ───────────→  │   Placed   │
-│ (ghost      │                  │ (ghost      │               │ (real      │
-│  tracks     │                  │  stays      │    Cancel     │  furniture)|
-│  cursor)    │ ←── Cancel ────  │  in place)  │ ───────────→  │            │
-└────────────┘                   └────────────┘               └────────────┘
-```
-
-- **Following**: Ghost snaps to isometric grid tiles as cursor moves. Grid highlights show valid/invalid.
-- **Click valid tile**: Ghost **locks** at that position. Color changes to `lockedColor`. Confirm button appears.
-- **Confirm**: Places furniture permanently. **Cancel**: Destroys ghost, back to inventory.
-
-> [!TIP]
-> The ghost **does not follow the mouse** when hovering over UI buttons. Only clicks on grid tiles (not over UI) trigger the lock.
-
----
-
-## 6. Fishing Mini-Game as UI Overlay
-
-### Old vs New
-
-| Aspect | Before | After |
-|---|---|---|
-| Fish rendering | World-space SpriteRenderer | UI Image (Canvas) |
-| Tap detection | Physics2D.OverlapPoint | IPointerClickHandler (UI) |
-| Spawning area | World coordinates | RectTransform |
-| Cat interaction | Still active | **Disabled** while playing |
-
-### FishUI Prefab Setup
-1. Create a UI element (Image) → name "FishUI"
-2. Add components: `Image`, `Button`, `FishUI`
-3. Size: ~60×30 (adjust to your fish art)
-4. **Save as Prefab**
-
-### Mini-Game Panel Setup
-```
-📁 Canvas
-└── 📁 MiniGamePanel (hidden, full-screen overlay)
-    ├── 📜 CatFishingGame (script)
-    ├── 📁 FishArea (stretch to fill, this is where fish swim)
-    │   └── 📜 FishSpawner (script)
-    ├── 📝 ScoreText — "0"
-    ├── 📝 TimerText — "30s"
-    ├── 📝 InstructionText
-    ├── 🔘 StartButton — "Start!"
-    ├── 🔘 CloseButton — "✕"
-    ├── 🖼️ CatPawUI (RectTransform, hidden by default)
-    └── 📁 GameOverPanel (hidden)
-        ├── 📝 FinalScoreText
-        ├── 📝 CoinsEarnedText
-        ├── 🔘 PlayAgainButton
-        └── 🔘 ExitButton
-```
-
-### FishSpawner Configuration
-
-| Field | Value |
-|---|---|
-| Fish UI Prefab | Your FishUI prefab |
-| Fish Area | The "FishArea" RectTransform |
-| Normal Fish Sprite | Your fish sprite |
-| Golden Fish Sprite | Your golden fish sprite |
-| Base Speed | 250 (pixels/sec) |
-| Max Speed | 500 (pixels/sec) |
-
-> [!WARNING]
-> The old `Fish.cs` (world-space) is now unused. You can delete it and its prefab. The new `FishUI.cs` replaces it entirely.
-
-### Interaction Blocking
-When the mini-game opens, it **automatically disables** `CatInteraction` and `CatAI` so the player can focus on fishing without accidentally petting the cat or tapping the ground.
-
----
-
-## Files Reference
-
-### New Files
-| File | Purpose |
-|---|---|
-| [ScreenFader.cs](file:///d:/Project/CatRaising/Assets/Scripts/Core/ScreenFader.cs) | Fade-to-black transition |
-| [FishUI.cs](file:///d:/Project/CatRaising/Assets/Scripts/MiniGame/FishUI.cs) | UI-based fish entity |
-
-### Rewritten Files
-| File | Key Change |
-|---|---|
-| [RoomSwitcherUI.cs](file:///d:/Project/CatRaising/Assets/Scripts/UI/RoomSwitcherUI.cs) | Selection panel instead of arrows |
-| [DailyTaskManager.cs](file:///d:/Project/CatRaising/Assets/Scripts/Systems/DailyTaskManager.cs) | Separate complete from claim |
-| [DailyTaskUI.cs](file:///d:/Project/CatRaising/Assets/Scripts/UI/DailyTaskUI.cs) | Claim buttons + red dot |
-| [AchievementManager.cs](file:///d:/Project/CatRaising/Assets/Scripts/Systems/AchievementManager.cs) | Separate unlock from claim |
-| [AchievementUI.cs](file:///d:/Project/CatRaising/Assets/Scripts/UI/AchievementUI.cs) | Claim buttons + red dot |
-| [FurniturePlacementUI.cs](file:///d:/Project/CatRaising/Assets/Scripts/UI/FurniturePlacementUI.cs) | Click-to-lock flow |
-| [CatFishingGame.cs](file:///d:/Project/CatRaising/Assets/Scripts/MiniGame/CatFishingGame.cs) | UI overlay + disable cat |
-| [FishSpawner.cs](file:///d:/Project/CatRaising/Assets/Scripts/MiniGame/FishSpawner.cs) | Spawns UI fish |
-
-### Modified Files
-| File | Key Change |
-|---|---|
-| [GameData.cs](file:///d:/Project/CatRaising/Assets/Scripts/Data/GameData.cs) | Added claimed states for tasks/achievements |
-| [FoodBowl.cs](file:///d:/Project/CatRaising/Assets/Scripts/Interactables/FoodBowl.cs) | Grid position + adjacent walkable |
-| [WaterBowl.cs](file:///d:/Project/CatRaising/Assets/Scripts/Interactables/WaterBowl.cs) | Grid position + adjacent walkable |
-| [CatAI.cs](file:///d:/Project/CatRaising/Assets/Scripts/Cat/CatAI.cs) | Uses `GetAdjacentWalkablePosition()` for bowls |

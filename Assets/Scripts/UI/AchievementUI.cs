@@ -62,7 +62,7 @@ namespace CatRaising.UI
             if (popupTitle != null) popupTitle.text = $"🏆 {def.name}";
             if (popupDescription != null) popupDescription.text = def.description;
 
-            string reward = $"+{def.coinReward} 🐾";
+            string reward = $"+{def.coinReward} ";
             if (def.bondReward > 0) reward += $"  +{def.bondReward} bond";
             if (popupReward != null) popupReward.text = reward;
 
@@ -95,7 +95,7 @@ namespace CatRaising.UI
 
             var allDefs = AchievementManager.GetAllDefinitions();
             int unlocked = 0;
-
+            int i = 0;
             foreach (var def in allDefs)
             {
                 bool isUnlocked = AchievementManager.Instance != null &&
@@ -110,13 +110,14 @@ namespace CatRaising.UI
                     var itemObj = Instantiate(listItemPrefab, listContent);
                     var texts = itemObj.GetComponentsInChildren<TextMeshProUGUI>();
 
-                    if (texts.Length >= 1) texts[0].text = isUnlocked ? def.name : "???";
-                    if (texts.Length >= 2) texts[1].text = isUnlocked ? def.description : "Locked";
+                    if (texts.Length >= 1) texts[0].text = isUnlocked ? def.name : allDefs[i].name;
+                    if (texts.Length >= 2) texts[1].text = isUnlocked ? def.description : allDefs[i].description;
+                    i++;
                     if (texts.Length >= 3)
                     {
                         if (isClaimed) texts[2].text = "✅ Claimed";
-                        else if (isUnlocked) texts[2].text = $"+{def.coinReward} 🐾";
-                        else texts[2].text = $"{def.coinReward} 🐾";
+                        else if (isUnlocked) texts[2].text = $"+{def.coinReward} ";
+                        else texts[2].text = $"{def.coinReward} ";
                     }
 
                     // Claim button (4th child button, if present)
@@ -147,7 +148,7 @@ namespace CatRaising.UI
                     }
 
                     var cg = itemObj.GetComponent<CanvasGroup>();
-                    if (cg != null) cg.alpha = isUnlocked ? 1f : 0.5f;
+                    if (cg != null) cg.alpha = isUnlocked ? 1f : 0.8f;
                 }
             }
 

@@ -115,7 +115,7 @@ namespace CatRaising.Systems
                 PawCoinManager.Instance.AddCoins(reward, $"daily:{taskType}");
 
             OnClaimStateChanged?.Invoke();
-            Debug.Log($"[DailyTask] Claimed {taskType}: +{reward} 🐾");
+            Debug.Log($"[DailyTask] Claimed {taskType}: +{reward} ");
             return reward;
         }
 

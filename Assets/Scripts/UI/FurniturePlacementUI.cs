@@ -6,6 +6,7 @@ using CatRaising.Core;
 using CatRaising.Data;
 using CatRaising.Interactables;
 using CatRaising.Systems;
+using CatRaising.Cat;
 
 namespace CatRaising.UI
 {
@@ -37,6 +38,7 @@ namespace CatRaising.UI
         [SerializeField] private Color validColor = new Color(0.5f, 1f, 0.5f, 0.7f);
         [SerializeField] private Color invalidColor = new Color(1f, 0.5f, 0.5f, 0.7f);
         [SerializeField] private Color lockedColor = new Color(0.7f, 1f, 0.7f, 0.9f);
+        [SerializeField] private Color removeHighlightColor = new Color(1f, 0.3f, 0.3f, 0.7f);
 
         [Header("Tile Highlight (Optional)")]
         [SerializeField] private GameObject tileHighlightPrefab;
@@ -45,7 +47,7 @@ namespace CatRaising.UI
         [SerializeField] private ShopUI shopUI;
 
         // States
-        private enum PlacementState { Idle, Following, Locked }
+        private enum PlacementState { Idle, Following, Locked, Removing }
         private PlacementState _state = PlacementState.Idle;
 
         private GameObject _ghostFurniture;
@@ -54,6 +56,19 @@ namespace CatRaising.UI
         private List<GameObject> _placedFurnitureObjects = new List<GameObject>();
         private List<GameObject> _inventorySlots = new List<GameObject>();
         private List<GameObject> _tileHighlights = new List<GameObject>();
+
+        // Cat interaction references (disabled during placement/removal)
+        private CatInteraction _catInteraction;
+        private CatAI _catAI;
+
+        /// <summary>
+        /// True when the player is in placing or removing mode.
+        /// Used by CameraController to suppress ground-tap calls to the cat.
+        /// </summary>
+        public bool IsInPlacementMode =>
+            _state == PlacementState.Following ||
+            _state == PlacementState.Locked ||
+            _state == PlacementState.Removing;
 
         private void Start()
         {
@@ -64,6 +79,10 @@ namespace CatRaising.UI
 
             if (placementPanel != null) placementPanel.SetActive(false);
             HidePlacementButtons();
+
+            // Find cat components for disabling during placement
+            _catInteraction = FindAnyObjectByType<CatInteraction>();
+            _catAI = FindAnyObjectByType<CatAI>();
         }
 
         private void Update()
@@ -76,6 +95,15 @@ namespace CatRaising.UI
                 if (Input.GetMouseButtonDown(0) && !TouchInput.IsOverUI)
                 {
                     TryLockGhost();
+                }
+            }
+            else if (_state == PlacementState.Removing)
+            {
+                UpdateRemoveHighlight();
+
+                if (Input.GetMouseButtonDown(0) && !TouchInput.IsOverUI)
+                {
+                    TryRemoveFurnitureAtCursor();
                 }
             }
         }
@@ -121,6 +149,12 @@ namespace CatRaising.UI
             // Show cancel but NOT confirm yet
             if (cancelButton != null) cancelButton.gameObject.SetActive(true);
             if (confirmButton != null) confirmButton.gameObject.SetActive(false);
+
+            // Hide inventory panel so the player can see the grid
+            if (placementPanel != null) placementPanel.SetActive(false);
+
+            // Disable cat interaction while placing
+            SetCatInteractionsEnabled(false);
         }
 
         /// <summary>
@@ -223,6 +257,10 @@ namespace CatRaising.UI
             ClearTileHighlights();
             HidePlacementButtons();
 
+            // Re-show inventory and re-enable cat interaction
+            if (placementPanel != null) placementPanel.SetActive(true);
+            SetCatInteractionsEnabled(true);
+
             if (AchievementManager.Instance != null)
                 AchievementManager.Instance.CheckAll();
 
@@ -236,11 +274,22 @@ namespace CatRaising.UI
                 Destroy(_ghostFurniture);
                 _ghostFurniture = null;
             }
+
+            bool wasActive = _state != PlacementState.Idle;
+
             _state = PlacementState.Idle;
             _selectedItem = null;
 
             ClearTileHighlights();
             HidePlacementButtons();
+
+            // Re-show inventory and re-enable cat interaction if we were in a mode
+            if (wasActive)
+            {
+                if (placementPanel != null) placementPanel.SetActive(true);
+                SetCatInteractionsEnabled(true);
+                RefreshInventory();
+            }
         }
 
         private void HidePlacementButtons()
@@ -249,9 +298,111 @@ namespace CatRaising.UI
             if (cancelButton != null) cancelButton.gameObject.SetActive(false);
         }
 
+        // ─── Remove Mode ────────────────────────────────────────
+
         private void RemoveSelectedFurniture()
         {
-            Debug.Log("[Furniture] Remove mode: tap a placed furniture to pick it up.");
+            // Enter remove mode
+            CancelPlacement(); // clean up any ongoing placement first
+            _state = PlacementState.Removing;
+
+            // Hide inventory panel so the player can see the grid
+            if (placementPanel != null) placementPanel.SetActive(false);
+
+            // Show cancel button to exit remove mode
+            if (cancelButton != null) cancelButton.gameObject.SetActive(true);
+            if (confirmButton != null) confirmButton.gameObject.SetActive(false);
+
+            // Disable cat interaction while removing
+            SetCatInteractionsEnabled(false);
+
+            Debug.Log("[Furniture] Remove mode: tap a tile to remove furniture.");
+        }
+
+        /// <summary>
+        /// Show a red tile highlight under the cursor during remove mode.
+        /// </summary>
+        private void UpdateRemoveHighlight()
+        {
+            if (IsometricGrid.Instance == null) return;
+
+            var grid = IsometricGrid.Instance;
+            Vector2 worldPos = TouchInput.WorldPosition;
+            Vector2Int cell = grid.WorldToGrid(worldPos);
+
+            ClearTileHighlights();
+
+            if (tileHighlightPrefab != null && grid.IsInBounds(cell))
+            {
+                Vector3 pos = grid.GridToWorld(cell);
+                var h = Instantiate(tileHighlightPrefab, pos, Quaternion.identity);
+                var sr = h.GetComponent<SpriteRenderer>();
+                if (sr != null) sr.color = removeHighlightColor;
+                _tileHighlights.Add(h);
+            }
+        }
+
+        /// <summary>
+        /// Check if any placed furniture occupies the clicked tile, and remove it.
+        /// </summary>
+        private void TryRemoveFurnitureAtCursor()
+        {
+            if (IsometricGrid.Instance == null) return;
+
+            var grid = IsometricGrid.Instance;
+            Vector2 worldPos = TouchInput.WorldPosition;
+            Vector2Int cell = grid.WorldToGrid(worldPos);
+
+            // Find a placed furniture whose grid footprint includes this cell
+            for (int i = _placedFurnitureObjects.Count - 1; i >= 0; i--)
+            {
+                var obj = _placedFurnitureObjects[i];
+                if (obj == null) { _placedFurnitureObjects.RemoveAt(i); continue; }
+
+                var fi = obj.GetComponent<FurnitureInstance>();
+                if (fi == null) continue;
+
+                // Check if clicked cell is within this furniture's footprint
+                Vector2Int fPos = fi.GridPosition;
+                Vector2Int fSize = fi.GridSize;
+
+                if (cell.x >= fPos.x && cell.x < fPos.x + fSize.x &&
+                    cell.y >= fPos.y && cell.y < fPos.y + fSize.y)
+                {
+                    // Remove save data
+                    if (GameManager.Instance?.Data != null)
+                    {
+                        var placedList = GameManager.Instance.Data.placedFurniture;
+                        for (int j = placedList.Count - 1; j >= 0; j--)
+                        {
+                            var save = placedList[j];
+                            if (save.itemId == fi.ItemId &&
+                                save.gridCol == fPos.x && save.gridRow == fPos.y)
+                            {
+                                placedList.RemoveAt(j);
+                                break;
+                            }
+                        }
+                    }
+
+                    Debug.Log($"[Furniture] Removed {fi.ItemId} at grid ({fPos.x}, {fPos.y})");
+
+                    // Destroy the object (OnDestroy in FurnitureInstance frees grid tiles)
+                    _placedFurnitureObjects.RemoveAt(i);
+                    Destroy(obj);
+                    break;
+                }
+            }
+        }
+
+        // ─── Cat Interaction Control ─────────────────────────────
+
+        private void SetCatInteractionsEnabled(bool enabled)
+        {
+            if (_catInteraction != null) _catInteraction.enabled = enabled;
+            if (_catAI != null) _catAI.SetAIEnabled(enabled);
+
+            Debug.Log($"[Furniture] Cat interactions {(enabled ? "enabled" : "disabled")}");
         }
 
         // ─── Helpers ────────────────────────────────────────────
@@ -365,17 +516,17 @@ namespace CatRaising.UI
             var owned = shopUI.GetOwnedFurniture();
             foreach (var item in owned)
             {
-                bool placed = IsItemPlacedInCurrentRoom(item.itemId);
+                int placedCount = CountItemPlacedInCurrentRoom(item.itemId);
 
                 var slotObj = Instantiate(inventorySlotPrefab, inventoryContent);
                 _inventorySlots.Add(slotObj);
 
                 var texts = slotObj.GetComponentsInChildren<TextMeshProUGUI>();
                 if (texts.Length >= 1) texts[0].text = item.itemName;
-                if (texts.Length >= 2) texts[1].text = placed ? "Placed" : "Tap to place";
+                if (texts.Length >= 2) texts[1].text = placedCount > 0 ? $"Placed: {placedCount}" : "Tap to place";
 
                 var btn = slotObj.GetComponent<Button>();
-                if (btn != null && !placed)
+                if (btn != null)
                 {
                     var capturedItem = item;
                     btn.onClick.AddListener(() => StartPlacing(capturedItem));
@@ -383,13 +534,17 @@ namespace CatRaising.UI
             }
         }
 
-        private bool IsItemPlacedInCurrentRoom(string itemId)
+        /// <summary>
+        /// Count how many instances of a given item are placed in the current room.
+        /// </summary>
+        private int CountItemPlacedInCurrentRoom(string itemId)
         {
-            if (GameManager.Instance?.Data == null) return false;
+            if (GameManager.Instance?.Data == null) return 0;
             string currentRoom = RoomManager.Instance?.CurrentRoomId ?? "living_room";
+            int count = 0;
             foreach (var save in GameManager.Instance.Data.placedFurniture)
-                if (save.itemId == itemId && save.roomId == currentRoom) return true;
-            return false;
+                if (save.itemId == itemId && save.roomId == currentRoom) count++;
+            return count;
         }
     }
 }

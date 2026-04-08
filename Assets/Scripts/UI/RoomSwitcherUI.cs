@@ -24,6 +24,7 @@ namespace CatRaising.UI
         [SerializeField] private Button closeButton;
         [SerializeField] private Transform roomListContent;
         [SerializeField] private GameObject roomSlotPrefab; // Prefab with Button, 2x TMP_Text
+        [SerializeField] private TextMeshProUGUI roomTextUI;
 
         private List<GameObject> _roomSlots = new List<GameObject>();
 
@@ -63,6 +64,7 @@ namespace CatRaising.UI
 
                 var slotObj = Instantiate(roomSlotPrefab, roomListContent);
                 _roomSlots.Add(slotObj);
+                slotObj.transform.GetChild(1).GetComponent<Image>().sprite = room.backgroundSprite; // Optional: show room image
 
                 var texts = slotObj.GetComponentsInChildren<TextMeshProUGUI>();
                 if (texts.Length >= 1) texts[0].text = room.roomName;
@@ -74,7 +76,7 @@ namespace CatRaising.UI
                     else if (isUnlocked)
                         texts[1].text = "Go";
                     else
-                        texts[1].text = $"🔒 {room.unlockCost} 🐾";
+                        texts[1].text = $"🔒 {room.unlockCost} ";
                 }
 
                 var btn = slotObj.GetComponent<Button>();
@@ -112,6 +114,7 @@ namespace CatRaising.UI
                 {
                     if (RoomManager.Instance != null)
                         RoomManager.Instance.SwitchRoom(roomId);
+                    roomTextUI.text = RoomManager.Instance.CurrentRoom.roomName;
                 });
             }
             else
