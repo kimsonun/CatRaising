@@ -111,6 +111,7 @@ namespace CatRaising.UI
         public void Open()
         {
             if (placementPanel != null) placementPanel.SetActive(true);
+            removeButton.gameObject.SetActive(true);
             LoadPlacedFurniture();
             RefreshInventory();
         }
@@ -118,6 +119,7 @@ namespace CatRaising.UI
         public void Close()
         {
             CancelPlacement();
+            removeButton.gameObject.SetActive(false);
             if (placementPanel != null) placementPanel.SetActive(false);
         }
 
@@ -359,9 +361,8 @@ namespace CatRaising.UI
                 var obj = _placedFurnitureObjects[i];
                 if (obj == null) { _placedFurnitureObjects.RemoveAt(i); continue; }
 
-                var fi = obj.GetComponent<FurnitureInstance>();
+                var fi = obj.GetComponentInChildren<FurnitureInstance>();
                 if (fi == null) continue;
-
                 // Check if clicked cell is within this furniture's footprint
                 Vector2Int fPos = fi.GridPosition;
                 Vector2Int fSize = fi.GridSize;
@@ -494,7 +495,7 @@ namespace CatRaising.UI
                 }
 
                 var obj = Instantiate(furniturePrefab, worldPos, Quaternion.identity);
-                var fi = obj.GetComponent<FurnitureInstance>();
+                var fi = obj.GetComponentInChildren<FurnitureInstance>();
                 if (fi != null)
                     fi.Setup(save.itemId, save.roomId, item.itemSprite,
                              item.catInteraction, cell, item.gridSize);

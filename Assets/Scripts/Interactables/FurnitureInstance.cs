@@ -114,7 +114,7 @@ namespace CatRaising.Interactables
             gridSize = size;
 
             if (spriteRenderer == null)
-                spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+                spriteRenderer = GetComponent<SpriteRenderer>();
 
             if (spriteRenderer != null && sprite != null)
                 spriteRenderer.sprite = sprite;

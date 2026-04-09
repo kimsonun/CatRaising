@@ -58,8 +58,6 @@ namespace CatRaising.Core
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
             _occupied = new bool[gridWidth, gridHeight];
-
-            Debug.Log(GridToWorld(4, 0)); // Debug: log world position of tile (0,0)
         }
 
         // ─── Coordinate Conversion ──────────────────────────────

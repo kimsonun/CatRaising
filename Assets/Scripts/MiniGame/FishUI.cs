@@ -156,7 +156,7 @@ namespace CatRaising.MiniGame
             var popupText = popupObj.AddComponent<TextMeshProUGUI>();
             popupText.text = isGolden ? "+3" : "+1";
             popupText.fontSize = isGolden ? 48f : 36f;
-            popupText.color = isGolden ? new Color(1f, 0.85f, 0f) : Color.white;
+            popupText.color = isGolden ? new Color(1f, 0.85f, 0f) : Color.black;
             popupText.alignment = TextAlignmentOptions.Center;
             popupText.fontStyle = FontStyles.Bold;
             popupText.enableAutoSizing = false;
@@ -171,7 +171,7 @@ namespace CatRaising.MiniGame
 
         private System.Collections.IEnumerator FloatingScoreAnimation(RectTransform rect, TextMeshProUGUI text)
         {
-            float duration = 1f;
+            float duration = 0.3f;
             float elapsed = 0f;
             Vector2 startPos = rect.anchoredPosition;
             Color startColor = text.color;
@@ -182,8 +182,7 @@ namespace CatRaising.MiniGame
                 float t = elapsed / duration;
 
                 // Float upward
-                rect.anchoredPosition = startPos + Vector2.up * 80f * t;
-
+                rect.anchoredPosition = startPos + Vector2.up * 100f * t;
                 // Fade out in the second half
                 float alpha = t < 0.5f ? 1f : Mathf.Lerp(1f, 0f, (t - 0.5f) * 2f);
                 text.color = new Color(startColor.r, startColor.g, startColor.b, alpha);
@@ -194,13 +193,12 @@ namespace CatRaising.MiniGame
 
                 yield return null;
             }
-
             Destroy(rect.gameObject);
         }
 
         private System.Collections.IEnumerator CatchAnimation()
         {
-            float duration = 0.2f;
+            float duration = 0.3f;
             float elapsed = 0f;
             Vector3 startScale = _rectTransform.localScale;
             Vector2 startPos = _rectTransform.anchoredPosition;
