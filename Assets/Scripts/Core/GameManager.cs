@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 using CatRaising.Data;
 
@@ -27,6 +27,9 @@ namespace CatRaising.Core
         public CatRaising.Systems.DailyTaskManager dailyTaskManager;
         public CatRaising.Systems.AchievementManager achievementManager;
         public RoomManager roomManager;
+
+        [SerializeField] private Sprite[] background;
+        [SerializeField] private SpriteRenderer backgroundRenderer;
 
         /// <summary>
         /// Current game data (loaded from save or freshly created).
@@ -133,6 +136,7 @@ namespace CatRaising.Core
         {
             Debug.Log($"[GameManager] Game initialized. Cat: {Data.catName}, Bond: {Data.bondLevel:F1}, Coins: {Data.pawCoins}");
 
+            backgroundRenderer.sprite = background[UnityEngine.Random.Range(0, background.Length)];
             // Track days played
             string today = GameData.TodayString;
             if (Data.lastPlayedTime != "" && Data.GetLastPlayedTime().Date < DateTime.Now.Date)
