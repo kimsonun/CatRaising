@@ -34,6 +34,10 @@ namespace CatRaising.UI
             public FurnitureInteractionType catInteraction;
             [Tooltip("How many isometric grid tiles this furniture occupies (cols × rows)")]
             public Vector2Int gridSize = Vector2Int.one; // e.g. (1,1), (2,1), (2,2)
+            [Tooltip("Normal = blocks tiles; Rug = walkable, non-blocking; Surface = blocks walking but allows stacking; Wall = on room walls")]
+            public FurniturePlacementType placementType = FurniturePlacementType.Normal;
+            [Tooltip("Vertical offset for wall items (world units). Higher = further up the wall.")]
+            public float wallYOffset = 1.0f;
         }
 
         [Header("Shop Catalog")]
@@ -53,6 +57,7 @@ namespace CatRaising.UI
         [SerializeField] private TextMeshProUGUI confirmText;
         [SerializeField] private Button confirmBuyButton;
         [SerializeField] private Button confirmCancelButton;
+        [SerializeField] private TextMeshProUGUI confirmCostText;
 
         private ShopCategory _currentTab = ShopCategory.Furniture;
         private ShopItem _pendingPurchase;
@@ -132,7 +137,8 @@ namespace CatRaising.UI
             {
                 confirmDialog.SetActive(true);
                 if (confirmText != null)
-                    confirmText.text = $"Buy {item.itemName}\nfor {item.cost} ?";
+                    confirmText.text = $"Buy {item.itemName} for";
+                confirmCostText.text = item.cost.ToString();
             }
         }
 
@@ -149,6 +155,11 @@ namespace CatRaising.UI
                 if (RoomManager.Instance != null && RoomManager.Instance.UnlockRoom(item.itemId))
                 {
                     Debug.Log($"[Shop] Purchased room: {item.itemName}");
+
+                    // Play buy sound
+                    if (SoundEffectHooks.Instance != null)
+                        SoundEffectHooks.Instance.PlaySound("buy");
+
                     ShowTab(_currentTab); // Refresh
                 }
             }
@@ -162,6 +173,10 @@ namespace CatRaising.UI
                         GameManager.Instance.Data.totalItemsPurchased++;
                     }
                     Debug.Log($"[Shop] Purchased furniture: {item.itemName}");
+
+                    // Play buy sound
+                    if (SoundEffectHooks.Instance != null)
+                        SoundEffectHooks.Instance.PlaySound("buy");
 
                     if (AchievementManager.Instance != null)
                         AchievementManager.Instance.CheckAll();

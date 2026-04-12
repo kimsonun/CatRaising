@@ -99,7 +99,12 @@ namespace CatRaising.Systems
             _unlocked.Add(key);
             OnAchievementUnlocked?.Invoke(def);
             OnClaimStateChanged?.Invoke();
-            Debug.Log($"[Achievement] 🏆 Unlocked: {def.name} (needs claiming)");
+
+            // Play meow sound on achievement unlock
+            if (SoundEffectHooks.Instance != null)
+                SoundEffectHooks.Instance.PlaySound("meow");
+
+            Debug.Log($"[Achievement] Unlocked: {def.name} (needs claiming)");
         }
 
         /// <summary>
@@ -123,7 +128,7 @@ namespace CatRaising.Systems
                 BondSystem.Instance.AddBond(def.bondReward, $"achievement:{def.name}");
 
             OnClaimStateChanged?.Invoke();
-            Debug.Log($"[Achievement] ✅ Claimed: {def.name} (+{def.coinReward})");
+            Debug.Log($"[Achievement] Claimed: {def.name} (+{def.coinReward})");
         }
 
         public void CheckAll()

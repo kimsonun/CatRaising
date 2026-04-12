@@ -32,10 +32,18 @@ namespace CatRaising.UI
         private void Start()
         {
             if (menuButton != null)
-                menuButton.onClick.AddListener(OnMenuButtonPressed);
+                menuButton.onClick.AddListener(() =>
+                {
+                    Systems.SoundEffectHooks.Instance?.PlayButtonClick();
+                    OnMenuButtonPressed();
+                });
 
             if (settingsButton != null)
-                settingsButton.onClick.AddListener(OnOpenSettings);
+                settingsButton.onClick.AddListener(() =>
+                {
+                    Systems.SoundEffectHooks.Instance?.PlayButtonClick();
+                    OnOpenSettings();
+                });
 
             if (closeSettingsButton != null)
                 closeSettingsButton.onClick.AddListener(OnCloseSettings);

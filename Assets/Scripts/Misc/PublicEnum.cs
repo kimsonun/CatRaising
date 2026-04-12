@@ -31,6 +31,24 @@ public enum FurnitureInteractionType
     HideIn
 }
 
+/// <summary>
+/// Determines how furniture interacts with the isometric grid.
+/// Normal: blocks tiles (cat can't walk, can't stack).
+/// Rug: does NOT block tiles (cat walks over, other furniture can be placed on top).
+/// Surface: blocks walking but allows other furniture to be placed on top (table, counter).
+/// Wall: placed on room walls (col=0 for left wall, row=0 for right wall) with Y offset.
+///       Blocks floor furniture on that tile but does NOT block cat walking.
+/// Window: same as Wall, but also emits an isometric light source onto the floor.
+/// </summary>
+public enum FurniturePlacementType
+{
+    Normal,
+    Rug,
+    Surface,
+    Wall,
+    Window
+}
+
 public enum AchievementId
 {
     FirstTouch,

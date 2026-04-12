@@ -164,6 +164,10 @@ namespace CatRaising.Cat
 
             catController.RequestState(CatController.CatState.BeingPet);
 
+            // Start purring sound
+            if (Systems.SoundEffectHooks.Instance != null)
+                Systems.SoundEffectHooks.Instance.StartAmbient("purr");
+
             // Zoom camera toward the cat instead of scaling
             if (CameraController.Instance != null)
                 CameraController.Instance.StartPetZoom(transform);
@@ -217,6 +221,10 @@ namespace CatRaising.Cat
         {
             _isPetting = false;
             _petExitTimer = petExitDelay;
+
+            // Stop purring sound
+            if (Systems.SoundEffectHooks.Instance != null)
+                Systems.SoundEffectHooks.Instance.StopAmbient();
 
             // Zoom camera back out
             if (CameraController.Instance != null)

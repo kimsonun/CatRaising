@@ -30,6 +30,7 @@ namespace CatRaising.UI
         [SerializeField] private Button confirmButton;
         [SerializeField] private Button cancelButton;
         [SerializeField] private Button removeButton;
+        [SerializeField] private Button flipButton;
         [SerializeField] private Transform inventoryContent; // Should have GridLayoutGroup
         [SerializeField] private GameObject inventorySlotPrefab;
 
@@ -56,6 +57,21 @@ namespace CatRaising.UI
         private List<GameObject> _placedFurnitureObjects = new List<GameObject>();
         private List<GameObject> _inventorySlots = new List<GameObject>();
         private List<GameObject> _tileHighlights = new List<GameObject>();
+        private bool _isFlipped = false;
+
+        /// <summary>
+        /// Returns the effective grid size, swapping cols and rows when flipped.
+        /// A 2x1 item becomes 1x2 when flipped (and vice versa).
+        /// </summary>
+        private Vector2Int CurrentGridSize
+        {
+            get
+            {
+                if (_selectedItem == null) return Vector2Int.one;
+                var s = _selectedItem.gridSize;
+                return _isFlipped ? new Vector2Int(s.y, s.x) : s;
+            }
+        }
 
         // Cat interaction references (disabled during placement/removal)
         private CatInteraction _catInteraction;
@@ -76,6 +92,7 @@ namespace CatRaising.UI
             if (confirmButton != null) confirmButton.onClick.AddListener(ConfirmPlacement);
             if (cancelButton != null) cancelButton.onClick.AddListener(CancelPlacement);
             if (removeButton != null) removeButton.onClick.AddListener(RemoveSelectedFurniture);
+            if (flipButton != null) flipButton.onClick.AddListener(FlipGhost);
 
             if (placementPanel != null) placementPanel.SetActive(false);
             HidePlacementButtons();
@@ -130,6 +147,7 @@ namespace CatRaising.UI
             CancelPlacement();
             _selectedItem = item;
             _state = PlacementState.Following;
+            _isFlipped = false;
 
             if (furniturePrefab != null)
             {
@@ -139,6 +157,8 @@ namespace CatRaising.UI
                 {
                     sr.sprite = item.itemSprite;
                     sr.color = validColor;
+                    sr.sortingOrder = 9999; // Ghost always renders on top of all furniture
+                    sr.flipX = _isFlipped;
                 }
 
                 var col = _ghostFurniture.GetComponentInChildren<Collider2D>();
@@ -148,8 +168,9 @@ namespace CatRaising.UI
                 if (fi != null) fi.enabled = false;
             }
 
-            // Show cancel but NOT confirm yet
+            // Show cancel and flip buttons, but NOT confirm yet
             if (cancelButton != null) cancelButton.gameObject.SetActive(true);
+            if (flipButton != null) flipButton.gameObject.SetActive(true);
             if (confirmButton != null) confirmButton.gameObject.SetActive(false);
 
             // Hide inventory panel so the player can see the grid
@@ -161,6 +182,7 @@ namespace CatRaising.UI
 
         /// <summary>
         /// Ghost follows cursor, snapping to isometric grid tiles.
+        /// For wall items, snaps to the nearest wall edge with Y offset.
         /// </summary>
         private void UpdateGhostFollowing()
         {
@@ -169,6 +191,24 @@ namespace CatRaising.UI
             var grid = IsometricGrid.Instance;
             Vector2 worldPos = TouchInput.WorldPosition;
             Vector2Int cell = grid.WorldToGrid(worldPos);
+
+            // Wall/Window items snap to nearest wall edge
+            if (_selectedItem.placementType == FurniturePlacementType.Wall ||
+                _selectedItem.placementType == FurniturePlacementType.Window)
+            {
+                // Left wall candidate: col=0
+                Vector2Int leftCell = new Vector2Int(0, Mathf.Clamp(cell.y, 0, grid.GridHeight - 1));
+                // Right wall candidate: row=0
+                Vector2Int rightCell = new Vector2Int(Mathf.Clamp(cell.x, 0, grid.GridWidth - 1), 0);
+
+                Vector3 leftWorld = grid.GridToWorld(leftCell);
+                Vector3 rightWorld = grid.GridToWorld(rightCell);
+
+                float distLeft = Vector2.Distance(worldPos, (Vector2)leftWorld);
+                float distRight = Vector2.Distance(worldPos, (Vector2)rightWorld);
+
+                cell = distLeft <= distRight ? leftCell : rightCell;
+            }
 
             _ghostGridPos = cell;
             Vector3 anchorWorld = CalculateAnchorWorld(grid, cell);
@@ -200,9 +240,13 @@ namespace CatRaising.UI
                 if (sr != null)
                     sr.color = lockedColor;
 
-                // Now show both confirm and cancel
+                // Now show both confirm and cancel (flip stays visible)
                 if (confirmButton != null) confirmButton.gameObject.SetActive(true);
                 if (cancelButton != null) cancelButton.gameObject.SetActive(true);
+
+                // Play wood placement sound
+                if (Systems.SoundEffectHooks.Instance != null)
+                    Systems.SoundEffectHooks.Instance.PlaySound("wood_place");
 
                 Debug.Log($"[Furniture] Ghost locked at grid ({cell.x}, {cell.y}). Confirm or Cancel.");
             }
@@ -220,14 +264,34 @@ namespace CatRaising.UI
             }
 
             var grid = IsometricGrid.Instance;
-            grid.SetTilesOccupied(_ghostGridPos, _selectedItem.gridSize, true);
+
+            // Mark tiles based on placement type
+            switch (_selectedItem.placementType)
+            {
+                case FurniturePlacementType.Rug:
+                    // Rugs don't mark any tiles
+                    break;
+                case FurniturePlacementType.Surface:
+                    grid.SetTilesSurface(_ghostGridPos, CurrentGridSize, true);
+                    break;
+                case FurniturePlacementType.Wall:
+                case FurniturePlacementType.Window:
+                    grid.SetWallItem(_ghostGridPos, true);
+                    break;
+                case FurniturePlacementType.Normal:
+                default:
+                    grid.SetTilesOccupied(_ghostGridPos, CurrentGridSize, true);
+                    break;
+            }
 
             var saveData = new FurnitureSaveData
             {
                 itemId = _selectedItem.itemId,
                 roomId = RoomManager.Instance?.CurrentRoomId ?? "living_room",
                 gridCol = _ghostGridPos.x,
-                gridRow = _ghostGridPos.y
+                gridRow = _ghostGridPos.y,
+                placementType = _selectedItem.placementType.ToString(),
+                isFlipped = _isFlipped
             };
 
             if (GameManager.Instance?.Data != null)
@@ -245,7 +309,8 @@ namespace CatRaising.UI
             {
                 fi.enabled = true;
                 fi.Setup(_selectedItem.itemId, saveData.roomId, _selectedItem.itemSprite,
-                         _selectedItem.catInteraction, _ghostGridPos, _selectedItem.gridSize);
+                         _selectedItem.catInteraction, _ghostGridPos, CurrentGridSize,
+                         _selectedItem.placementType, _isFlipped);
             }
 
             _placedFurnitureObjects.Add(_ghostFurniture);
@@ -298,6 +363,23 @@ namespace CatRaising.UI
         {
             if (confirmButton != null) confirmButton.gameObject.SetActive(false);
             if (cancelButton != null) cancelButton.gameObject.SetActive(false);
+            if (flipButton != null) flipButton.gameObject.SetActive(false);
+        }
+
+        // ─── Flip ──────────────────────────────────────────────
+
+        /// <summary>
+        /// Flip the ghost furniture horizontally. Works for all furniture types.
+        /// </summary>
+        private void FlipGhost()
+        {
+            _isFlipped = !_isFlipped;
+            if (_ghostFurniture != null)
+            {
+                var sr = _ghostFurniture.GetComponentInChildren<SpriteRenderer>();
+                if (sr != null)
+                    sr.flipX = _isFlipped;
+            }
         }
 
         // ─── Remove Mode ────────────────────────────────────────
@@ -408,22 +490,36 @@ namespace CatRaising.UI
 
         // ─── Helpers ────────────────────────────────────────────
 
+        /// <summary>
+        /// Calculate the world position for furniture at the given grid cell.
+        /// Applies wall Y offset for wall items.
+        /// </summary>
         private Vector3 CalculateAnchorWorld(IsometricGrid grid, Vector2Int cell)
         {
             Vector3 anchor = grid.GridToWorld(cell);
-            if (_selectedItem != null && (_selectedItem.gridSize.x > 1 || _selectedItem.gridSize.y > 1))
+            var size = CurrentGridSize;
+            if (size.x > 1 || size.y > 1)
             {
-                Vector3 endWorld = grid.GridToWorld(cell.x + _selectedItem.gridSize.x - 1,
-                                                     cell.y + _selectedItem.gridSize.y - 1);
+                Vector3 endWorld = grid.GridToWorld(cell.x + size.x - 1,
+                                                     cell.y + size.y - 1);
                 anchor = (anchor + endWorld) * 0.5f;
             }
+
+            // Apply wall Y offset for wall items
+            if (_selectedItem != null &&
+                (_selectedItem.placementType == FurniturePlacementType.Wall ||
+                 _selectedItem.placementType == FurniturePlacementType.Window))
+            {
+                anchor.y += _selectedItem.wallYOffset;
+            }
+
             return anchor;
         }
 
         private bool IsValidPlacement(Vector2Int cell)
         {
             if (IsometricGrid.Instance == null || _selectedItem == null) return false;
-            return IsometricGrid.Instance.CanPlaceFurniture(cell, _selectedItem.gridSize);
+            return IsometricGrid.Instance.CanPlaceFurnitureOfType(cell, CurrentGridSize, _selectedItem.placementType);
         }
 
         private void UpdateTileHighlights(Vector2Int anchor, bool valid)
@@ -433,9 +529,10 @@ namespace CatRaising.UI
 
             var grid = IsometricGrid.Instance;
             Color c = valid ? validColor : invalidColor;
+            var size = CurrentGridSize;
 
-            for (int col = anchor.x; col < anchor.x + _selectedItem.gridSize.x; col++)
-                for (int row = anchor.y; row < anchor.y + _selectedItem.gridSize.y; row++)
+            for (int col = anchor.x; col < anchor.x + size.x; col++)
+                for (int row = anchor.y; row < anchor.y + size.y; row++)
                 {
                     Vector3 pos = grid.GridToWorld(col, row);
                     var h = Instantiate(tileHighlightPrefab, pos, Quaternion.identity);
@@ -475,19 +572,49 @@ namespace CatRaising.UI
                 var item = shopUI?.GetItem(save.itemId);
                 if (item == null) continue;
 
+                // Parse saved placement type (defaults to Normal for old saves)
+                FurniturePlacementType savedPlacementType = FurniturePlacementType.Normal;
+                if (!string.IsNullOrEmpty(save.placementType))
+                    System.Enum.TryParse(save.placementType, out savedPlacementType);
+
                 Vector2Int cell = new Vector2Int(save.gridCol, save.gridRow);
+
+                // Calculate effective grid size (swap if flipped)
+                Vector2Int effectiveSize = save.isFlipped
+                    ? new Vector2Int(item.gridSize.y, item.gridSize.x)
+                    : item.gridSize;
 
                 Vector3 worldPos;
                 if (grid != null)
                 {
                     worldPos = grid.GridToWorld(cell);
-                    if (item.gridSize.x > 1 || item.gridSize.y > 1)
+                    if (effectiveSize.x > 1 || effectiveSize.y > 1)
                     {
-                        Vector3 endPos = grid.GridToWorld(cell.x + item.gridSize.x - 1,
-                                                          cell.y + item.gridSize.y - 1);
+                        Vector3 endPos = grid.GridToWorld(cell.x + effectiveSize.x - 1,
+                                                          cell.y + effectiveSize.y - 1);
                         worldPos = (worldPos + endPos) * 0.5f;
                     }
-                    grid.SetTilesOccupied(cell, item.gridSize, true);
+
+                    // Restore tile state based on placement type
+                    switch (savedPlacementType)
+                    {
+                        case FurniturePlacementType.Rug:
+                            // Rugs don't mark any tiles
+                            break;
+                        case FurniturePlacementType.Surface:
+                            grid.SetTilesSurface(cell, effectiveSize, true);
+                            break;
+                        case FurniturePlacementType.Wall:
+                        case FurniturePlacementType.Window:
+                            grid.SetWallItem(cell, true);
+                            // Apply wall Y offset
+                            worldPos.y += item.wallYOffset;
+                            break;
+                        case FurniturePlacementType.Normal:
+                        default:
+                            grid.SetTilesOccupied(cell, effectiveSize, true);
+                            break;
+                    }
                 }
                 else
                 {
@@ -498,7 +625,8 @@ namespace CatRaising.UI
                 var fi = obj.GetComponentInChildren<FurnitureInstance>();
                 if (fi != null)
                     fi.Setup(save.itemId, save.roomId, item.itemSprite,
-                             item.catInteraction, cell, item.gridSize);
+                             item.catInteraction, cell, effectiveSize,
+                             savedPlacementType, save.isFlipped);
 
                 _placedFurnitureObjects.Add(obj);
             }
@@ -521,6 +649,7 @@ namespace CatRaising.UI
 
                 var slotObj = Instantiate(inventorySlotPrefab, inventoryContent);
                 _inventorySlots.Add(slotObj);
+                slotObj.transform.GetChild(0).GetComponent<Image>().sprite = item.itemSprite;
 
                 var texts = slotObj.GetComponentsInChildren<TextMeshProUGUI>();
                 if (texts.Length >= 1) texts[0].text = item.itemName;

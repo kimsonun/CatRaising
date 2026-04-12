@@ -1,0 +1,702 @@
+fileFormatVersion: 2
+guid: 9cda1f27d7ce27442b57fd877094ee98
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -5893490669425207014
+    second: Furnitures_0
+  - first:
+      213: -2463201183650264624
+    second: Furnitures_1
+  - first:
+      213: -2019508434382667515
+    second: Furnitures_2
+  - first:
+      213: 6055715914914191263
+    second: Furnitures_3
+  - first:
+      213: -3946099852551448889
+    second: Furnitures_4
+  - first:
+      213: 6443092996910407324
+    second: Furnitures_5
+  - first:
+      213: 4337053571455542110
+    second: Furnitures_6
+  - first:
+      213: 5206074522361599286
+    second: Furnitures_7
+  - first:
+      213: 8387867981351154326
+    second: Furnitures_8
+  - first:
+      213: -6864197725576704575
+    second: Furnitures_9
+  - first:
+      213: -5495547198044276078
+    second: Furnitures_10
+  - first:
+      213: 1391107824790908113
+    second: Furnitures_11
+  - first:
+      213: -4347861443644362692
+    second: Furnitures_12
+  - first:
+      213: -6414378598563472962
+    second: Furnitures_13
+  - first:
+      213: 3258344961482188114
+    second: Furnitures_14
+  - first:
+      213: 1509777252625922332
+    second: Furnitures_15
+  - first:
+      213: -4779801685769553588
+    second: Furnitures_16
+  - first:
+      213: 8427873887351586771
+    second: Furnitures_17
+  - first:
+      213: 1972864266767210915
+    second: Furnitures_18
+  - first:
+      213: -3680885564537243302
+    second: Furnitures_19
+  - first:
+      213: 3564017663511561744
+    second: Furnitures_20
+  - first:
+      213: 8447397909621586563
+    second: Furnitures_21
+  - first:
+      213: -4247450251016440145
+    second: Furnitures_22
+  - first:
+      213: 6150421473437993592
+    second: Furnitures_23
+  - first:
+      213: 5669024204768843481
+    second: Furnitures_24
+  - first:
+      213: 3241149201465336495
+    second: Furnitures_25
+  - first:
+      213: 718939149737274820
+    second: Furnitures_26
+  - first:
+      213: -8258269284822485418
+    second: Furnitures_27
+  - first:
+      213: -1318308084033936097
+    second: Furnitures_28
+  - first:
+      213: 7800214958650354454
+    second: Furnitures_29
+  - first:
+      213: 3607043903605479270
+    second: Furnitures_30
+  - first:
+      213: 4258054450941483540
+    second: Furnitures_31
+  - first:
+      213: 6600954945595519340
+    second: Furnitures_32
+  - first:
+      213: 6140663594568889475
+    second: Furnitures_33
+  - first:
+      213: -4636606369223017375
+    second: Furnitures_34
+  - first:
+      213: 5207384580870819478
+    second: Furnitures_35
+  - first:
+      213: 6635224481482163896
+    second: Furnitures_36
+  - first:
+      213: -5561663247538636060
+    second: Furnitures_37
+  - first:
+      213: -411708391181319937
+    second: Furnitures_38
+  - first:
+      213: -5437523126301099989
+    second: Furnitures_39
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 120
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: window1
+      rect:
+        serializedVersion: 2
+        x: 15
+        y: 404
+        width: 61
+        height: 95
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3f5bcc457bc67e34594de19db63004b3
+      internalID: -5893490669425207014
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: window2
+      rect:
+        serializedVersion: 2
+        x: 111
+        y: 404
+        width: 61
+        height: 95
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 70bd77801614c2d4d9a792a522daf27a
+      internalID: -2019508434382667515
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: scratchpole1
+      rect:
+        serializedVersion: 2
+        x: 187
+        y: 373
+        width: 64
+        height: 110
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7bf44f540c7a80345a6e8cb2e4ad5dfa
+      internalID: 1748667884
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: scratchpole2
+      rect:
+        serializedVersion: 2
+        x: 283
+        y: 374
+        width: 64
+        height: 110
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 332e0a0c4d7eb8f4cb9250127038909b
+      internalID: 1141907352
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: scratchpole3
+      rect:
+        serializedVersion: 2
+        x: 379
+        y: 374
+        width: 64
+        height: 110
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1b93cba8e10fffd46b5b4fac84237194
+      internalID: 96938677
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: window3
+      rect:
+        serializedVersion: 2
+        x: 15
+        y: 308
+        width: 61
+        height: 95
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f8fb86db6400c3b41abcb65c0e4c0898
+      internalID: -2463201183650264624
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: window4
+      rect:
+        serializedVersion: 2
+        x: 111
+        y: 308
+        width: 61
+        height: 95
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 70e3406bf5d6fb2439bd6cc8bf396ce7
+      internalID: 6055715914914191263
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bed1
+      rect:
+        serializedVersion: 2
+        x: 198
+        y: 280
+        width: 110
+        height: 82
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: acae11b6b96e78e418e70a6282093753
+      internalID: 5206074522361599286
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bed2
+      rect:
+        serializedVersion: 2
+        x: 325
+        y: 280
+        width: 110
+        height: 82
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0bf3d199291a2094ea3ad34a596abcff
+      internalID: 8387867981351154326
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Furnitures_9
+      rect:
+        serializedVersion: 2
+        x: 8
+        y: 211
+        width: 41
+        height: 63
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b302b898c90b7d44eba64687e716cfee
+      internalID: 542834331
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Furnitures_10
+      rect:
+        serializedVersion: 2
+        x: 75
+        y: 212
+        width: 38
+        height: 62
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6540ba390b79c424e93b58cc2cee2909
+      internalID: -1234282454
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: flowerpot
+      rect:
+        serializedVersion: 2
+        x: 128
+        y: 245
+        width: 23
+        height: 47
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 15926d2f9016b68438d01460f8c1a203
+      internalID: 2126977876
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bed3
+      rect:
+        serializedVersion: 2
+        x: 198
+        y: 182
+        width: 110
+        height: 82
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 49e6f85379e9b5d4fa64db55adb88f98
+      internalID: -6414378598563472962
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: bed4
+      rect:
+        serializedVersion: 2
+        x: 325
+        y: 182
+        width: 110
+        height: 82
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 15ab7bca10e24a1449054caacc7cde9c
+      internalID: 3258344961482188114
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: painting
+      rect:
+        serializedVersion: 2
+        x: 456
+        y: 216
+        width: 39
+        height: 89
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 39c44a62d48656340b5cda3e2cd34c3b
+      internalID: -6864197725576704575
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Furnitures_15
+      rect:
+        serializedVersion: 2
+        x: 10
+        y: 83
+        width: 100
+        height: 128
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d6be1dd06dbe5844c8439c10cc0b531d
+      internalID: -471894113
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: plant
+      rect:
+        serializedVersion: 2
+        x: 132
+        y: 31
+        width: 49
+        height: 170
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9aee1a172ec700d43a7014efcc4a25b8
+      internalID: 805558340
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: pole1
+      rect:
+        serializedVersion: 2
+        x: 193
+        y: 91
+        width: 55
+        height: 77
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0ea04751c5fa26c4891c63307b1bcb0a
+      internalID: 1203118643
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: pole2
+      rect:
+        serializedVersion: 2
+        x: 193
+        y: 0
+        width: 55
+        height: 74
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: bcc626b9b5c1d624397ded5b92792ee5
+      internalID: -2043698046
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: d1fd157c80fa1ba438b20b000ec04a3b
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":64.0,"y":64.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":0,"keepEmptyRects":false,"isAlternate":false}'
+    nameFileIdTable:
+      Furnitures_10: -1234282454
+      Furnitures_15: -471894113
+      Furnitures_9: 542834331
+      bed1: 5206074522361599286
+      bed2: 8387867981351154326
+      bed3: -6414378598563472962
+      bed4: 3258344961482188114
+      flowerpot: 2126977876
+      painting: -6864197725576704575
+      plant: 805558340
+      pole1: 1203118643
+      pole2: 1972864266767210915
+      scratchpole1: 1748667884
+      scratchpole2: 1141907352
+      scratchpole3: 96938677
+      window1: -1754378964
+      window2: -2019508434382667515
+      window3: -2463201183650264624
+      window4: 6055715914914191263
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -1,4 +1,5 @@
 using CatRaising.UI;
+using CatRaising.Systems;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,6 +10,10 @@ public class DailyTaskOpen : MonoBehaviour
 
     void Start()
     {
-        dailyTaskButton.onClick.AddListener(() => dailyTaskUI.Open());
+        dailyTaskButton.onClick.AddListener(() =>
+        {
+            SoundEffectHooks.Instance?.PlayButtonClick();
+            dailyTaskUI.Open();
+        });
     }
 }

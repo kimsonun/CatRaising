@@ -46,6 +46,10 @@ namespace CatRaising.Core
 
         // Occupancy: true = tile is blocked by furniture
         private bool[,] _occupied;
+        // Surface layer: true = tile has a surface (table/counter) that allows stacking
+        private bool[,] _hasSurface;
+        // Wall item layer: true = tile has a wall-mounted item (blocks floor furniture, not walking)
+        private bool[,] _hasWallItem;
 
         public int GridWidth => gridWidth;
         public int GridHeight => gridHeight;
@@ -58,6 +62,8 @@ namespace CatRaising.Core
             if (Instance != null && Instance != this) { Destroy(gameObject); return; }
             Instance = this;
             _occupied = new bool[gridWidth, gridHeight];
+            _hasSurface = new bool[gridWidth, gridHeight];
+            _hasWallItem = new bool[gridWidth, gridHeight];
         }
 
         // ─── Coordinate Conversion ──────────────────────────────
@@ -144,8 +150,8 @@ namespace CatRaising.Core
         }
 
         /// <summary>
-        /// Check if furniture of given size can be placed at (col, row).
-        /// The anchor is the top-left cell of the furniture footprint.
+        /// Check if normal furniture of given size can be placed at (col, row).
+        /// Normal furniture can be placed on empty tiles OR on surface tiles (tables).
         /// </summary>
         public bool CanPlaceFurniture(int col, int row, int sizeCols, int sizeRows)
         {
@@ -163,6 +169,56 @@ namespace CatRaising.Core
         public bool CanPlaceFurniture(Vector2Int cell, Vector2Int size)
         {
             return CanPlaceFurniture(cell.x, cell.y, size.x, size.y);
+        }
+
+        /// <summary>
+        /// Check if furniture can be placed based on its placement type.
+        /// Normal: tiles must be unoccupied (but surface tiles ARE allowed). Blocked by wall items.
+        /// Rug: only needs in-bounds check (can go anywhere).
+        /// Surface: tiles must be completely unoccupied. Blocked by wall items.
+        /// Wall: must be on edge tile (col=0 or row=0), not overlapping other wall items.
+        /// </summary>
+        public bool CanPlaceFurnitureOfType(Vector2Int cell, Vector2Int size, FurniturePlacementType placementType)
+        {
+            switch (placementType)
+            {
+                case FurniturePlacementType.Rug:
+                    // Rugs can be placed anywhere in bounds
+                    for (int c = cell.x; c < cell.x + size.x; c++)
+                        for (int r = cell.y; r < cell.y + size.y; r++)
+                            if (!IsInBounds(c, r)) return false;
+                    return true;
+
+                case FurniturePlacementType.Surface:
+                    // Surfaces need completely empty tiles (no occupied, no existing surface, no wall items)
+                    for (int c = cell.x; c < cell.x + size.x; c++)
+                        for (int r = cell.y; r < cell.y + size.y; r++)
+                            if (!IsInBounds(c, r) || _occupied[c, r] || _hasWallItem[c, r]) return false;
+                    return true;
+
+                case FurniturePlacementType.Wall:
+                case FurniturePlacementType.Window:
+                    // Wall/Window items must be on an edge (col=0 or row=0) and not overlap other wall items
+                    if (!IsInBounds(cell)) return false;
+                    if (cell.x != 0 && cell.y != 0) return false; // Must be on a wall edge
+                    if (_hasWallItem[cell.x, cell.y]) return false;
+                    return true;
+
+                case FurniturePlacementType.Normal:
+                default:
+                    // Normal furniture: can be placed on empty tiles or on surface tiles, blocked by wall items
+                    for (int c = cell.x; c < cell.x + size.x; c++)
+                    {
+                        for (int r = cell.y; r < cell.y + size.y; r++)
+                        {
+                            if (!IsInBounds(c, r)) return false;
+                            if (_hasWallItem[c, r]) return false; // Can't place on wall item tiles
+                            // Blocked if occupied AND there's no surface to place on
+                            if (_occupied[c, r] && !_hasSurface[c, r]) return false;
+                        }
+                    }
+                    return true;
+            }
         }
 
         /// <summary>
@@ -186,11 +242,72 @@ namespace CatRaising.Core
         }
 
         /// <summary>
+        /// Mark tiles as having a surface (table/counter) that allows stacking.
+        /// Surface tiles are also occupied (block walking) but allow normal furniture on top.
+        /// </summary>
+        public void SetTilesSurface(int col, int row, int sizeCols, int sizeRows, bool hasSurface)
+        {
+            for (int c = col; c < col + sizeCols; c++)
+            {
+                for (int r = row; r < row + sizeRows; r++)
+                {
+                    if (IsInBounds(c, r))
+                    {
+                        _hasSurface[c, r] = hasSurface;
+                        // Surfaces also block walking
+                        _occupied[c, r] = hasSurface;
+                    }
+                }
+            }
+        }
+
+        public void SetTilesSurface(Vector2Int cell, Vector2Int size, bool hasSurface)
+        {
+            SetTilesSurface(cell.x, cell.y, size.x, size.y, hasSurface);
+        }
+
+        /// <summary>
+        /// Check if a tile has a surface (table/counter).
+        /// </summary>
+        public bool HasSurface(int col, int row)
+        {
+            if (!IsInBounds(col, row)) return false;
+            return _hasSurface[col, row];
+        }
+
+        // ─── Wall Item Occupancy ────────────────────────────────
+
+        /// <summary>
+        /// Mark a tile as having a wall item. Blocks floor furniture but not cat walking.
+        /// </summary>
+        public void SetWallItem(int col, int row, bool hasWall)
+        {
+            if (IsInBounds(col, row))
+                _hasWallItem[col, row] = hasWall;
+        }
+
+        public void SetWallItem(Vector2Int cell, bool hasWall)
+        {
+            SetWallItem(cell.x, cell.y, hasWall);
+        }
+
+        /// <summary>
+        /// Check if a tile has a wall item.
+        /// </summary>
+        public bool HasWallItem(int col, int row)
+        {
+            if (!IsInBounds(col, row)) return false;
+            return _hasWallItem[col, row];
+        }
+
+        /// <summary>
         /// Clear all occupancy (call when switching rooms).
         /// </summary>
         public void ClearAllOccupancy()
         {
             _occupied = new bool[gridWidth, gridHeight];
+            _hasSurface = new bool[gridWidth, gridHeight];
+            _hasWallItem = new bool[gridWidth, gridHeight];
         }
 
         // ─── Cat AI Helpers ─────────────────────────────────────
@@ -268,8 +385,12 @@ namespace CatRaising.Core
                     Vector3 center = GridToWorld(c, r);
 
                     bool occupied = _occupied != null && c < _occupied.GetLength(0) && r < _occupied.GetLength(1) && _occupied[c, r];
+                    bool hasSurface = _hasSurface != null && c < _hasSurface.GetLength(0) && r < _hasSurface.GetLength(1) && _hasSurface[c, r];
+                    bool hasWall = _hasWallItem != null && c < _hasWallItem.GetLength(0) && r < _hasWallItem.GetLength(1) && _hasWallItem[c, r];
 
-                    Gizmos.color = occupied ? gizmoOccupiedColor : gizmoWalkableColor;
+                    Gizmos.color = hasWall ? new Color(0.8f, 0.4f, 1f, 0.5f)
+                                 : hasSurface ? new Color(0.3f, 0.6f, 1f, 0.5f)
+                                 : (occupied ? gizmoOccupiedColor : gizmoWalkableColor);
 
                     // Draw diamond shape
                     Vector3 top = center + new Vector3(0, tileHeight * 0.5f, 0);

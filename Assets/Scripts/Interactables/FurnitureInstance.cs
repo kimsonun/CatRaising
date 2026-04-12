@@ -16,6 +16,8 @@ namespace CatRaising.Interactables
         [SerializeField] private string itemId;
         [SerializeField] private string roomId;
         [SerializeField] private FurnitureInteractionType interactionType;
+        [SerializeField] private FurniturePlacementType placementType = FurniturePlacementType.Normal;
+        [SerializeField] private bool isFlipped = false;
 
         [Header("Grid Position")]
         [SerializeField] private Vector2Int gridPosition;  // Anchor cell (top-left)
@@ -44,6 +46,8 @@ namespace CatRaising.Interactables
         public Vector2Int GridPosition => gridPosition;
         public Vector2Int GridSize => gridSize;
         public FurnitureInteractionType InteractionType => interactionType;
+        public FurniturePlacementType PlacementType => placementType;
+        public bool IsFlipped => isFlipped;
 
         private void Start()
         {
@@ -102,22 +106,68 @@ namespace CatRaising.Interactables
 
         /// <summary>
         /// Configure this instance at runtime (when spawned from placement).
-        /// Overload with grid position and size for isometric placement.
+        /// Overload with grid position, size, placement type, and flip for isometric placement.
         /// </summary>
         public void Setup(string id, string room, Sprite sprite, FurnitureInteractionType type,
-                          Vector2Int gridPos, Vector2Int size)
+                          Vector2Int gridPos, Vector2Int size,
+                          FurniturePlacementType pType = FurniturePlacementType.Normal,
+                          bool flipped = false)
         {
             itemId = id;
             roomId = room;
             interactionType = type;
             gridPosition = gridPos;
             gridSize = size;
+            placementType = pType;
+            isFlipped = flipped;
 
             if (spriteRenderer == null)
                 spriteRenderer = GetComponent<SpriteRenderer>();
 
             if (spriteRenderer != null && sprite != null)
                 spriteRenderer.sprite = sprite;
+
+            // Apply flip
+            if (spriteRenderer != null)
+                spriteRenderer.flipX = isFlipped;
+
+            // Auto-add WindowLight for Window type, or flip existing one
+            if (pType == FurniturePlacementType.Window)
+            {
+                var windowLight = GetComponentInChildren<WindowLight>();
+                if (windowLight == null)
+                    windowLight = gameObject.AddComponent<WindowLight>();
+                windowLight.SetFlipped(isFlipped);
+            }
+
+            // ─── Sorting Order ─────────────────────────────────────
+            // In isometric view, objects with higher (col+row) are closer to the camera.
+            // At the same depth, objects further RIGHT (higher col) render in front.
+            // Layer priority: Wall (-200) < Rug (-100) < Surface (base) < Normal ON surface (+5)
+            if (spriteRenderer != null)
+            {
+                int depthOrder = (gridPos.x + gridPos.y) * 10 + gridPos.x;
+                switch (pType)
+                {
+                    case FurniturePlacementType.Wall:
+                    case FurniturePlacementType.Window:
+                        spriteRenderer.sortingOrder = depthOrder - 200; // Behind everything
+                        break;
+                    case FurniturePlacementType.Rug:
+                        spriteRenderer.sortingOrder = depthOrder - 100; // Below floor furniture
+                        break;
+                    case FurniturePlacementType.Surface:
+                        spriteRenderer.sortingOrder = depthOrder;        // Base level
+                        break;
+                    case FurniturePlacementType.Normal:
+                    default:
+                        // Only boost if actually placed on a surface tile (e.g. TV on table)
+                        bool onSurface = IsometricGrid.Instance != null &&
+                                         IsometricGrid.Instance.HasSurface(gridPos.x, gridPos.y);
+                        spriteRenderer.sortingOrder = onSurface ? depthOrder + 5 : depthOrder;
+                        break;
+                }
+            }
 
             // Set interaction parameters based on type
             switch (type)
@@ -145,12 +195,33 @@ namespace CatRaising.Interactables
 
         /// <summary>
         /// Release occupied tiles on the grid when this furniture is removed.
+        /// Handles different placement types:
+        /// - Rug: no tiles to free
+        /// - Surface: frees the surface layer
+        /// - Wall: frees the wall item layer
+        /// - Normal: frees occupied tiles
         /// </summary>
         private void OnDestroy()
         {
             if (IsometricGrid.Instance != null && gridSize.x > 0 && gridSize.y > 0)
             {
-                IsometricGrid.Instance.SetTilesOccupied(gridPosition, gridSize, false);
+                switch (placementType)
+                {
+                    case FurniturePlacementType.Rug:
+                        // Rugs don't occupy tiles, nothing to free
+                        break;
+                    case FurniturePlacementType.Surface:
+                        IsometricGrid.Instance.SetTilesSurface(gridPosition, gridSize, false);
+                        break;
+                    case FurniturePlacementType.Wall:
+                    case FurniturePlacementType.Window:
+                        IsometricGrid.Instance.SetWallItem(gridPosition, false);
+                        break;
+                    case FurniturePlacementType.Normal:
+                    default:
+                        IsometricGrid.Instance.SetTilesOccupied(gridPosition, gridSize, false);
+                        break;
+                }
             }
         }
     }

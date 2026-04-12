@@ -37,11 +37,11 @@ namespace CatRaising.Systems
         {
             get
             {
-                if (_bondLevel >= 91f) return "Soulmate";
-                if (_bondLevel >= 76f) return "Best Friend";
-                if (_bondLevel >= 51f) return "Companion";
-                if (_bondLevel >= 26f) return "Friend";
-                if (_bondLevel >= 11f) return "Acquaintance";
+                if (_bondLevel >= 90f) return "Soulmate";
+                if (_bondLevel >= 75f) return "Best Friend";
+                if (_bondLevel >= 50f) return "Companion";
+                if (_bondLevel >= 25f) return "Friend";
+                if (_bondLevel >= 10f) return "Acquaintance";
                 return "Stranger";
             }
         }

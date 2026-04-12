@@ -11,6 +11,8 @@ namespace CatRaising.Data
         public string roomId;
         public int gridCol;
         public int gridRow;
+        public string placementType = "Normal"; // "Normal", "Rug", "Surface", or "Wall"
+        public bool isFlipped = false;
     }
 
     /// <summary>

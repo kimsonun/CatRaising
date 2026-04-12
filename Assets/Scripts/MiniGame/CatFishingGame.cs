@@ -100,6 +100,10 @@ namespace CatRaising.MiniGame
             if (instructionText != null) instructionText.text = "Tap fish to catch them!\nGolden fish = 3× points!";
             if (startButton != null) startButton.gameObject.SetActive(true);
 
+            // Switch to mini-game BGM
+            if (Systems.SoundEffectHooks.Instance != null)
+                Systems.SoundEffectHooks.Instance.StartMiniGameBGM();
+
             // Disable cat interactions while mini-game is open
             SetCatInteractionsEnabled(false);
         }
@@ -112,6 +116,10 @@ namespace CatRaising.MiniGame
             if (fishSpawner != null) fishSpawner.StopSpawning();
             if (gamePanel != null) gamePanel.SetActive(false);
             if (gameOverPanel != null) gameOverPanel.SetActive(false);
+
+            // Resume normal BGM
+            if (Systems.SoundEffectHooks.Instance != null)
+                Systems.SoundEffectHooks.Instance.StopMiniGameBGM();
 
             // Re-enable cat interactions
             SetCatInteractionsEnabled(true);

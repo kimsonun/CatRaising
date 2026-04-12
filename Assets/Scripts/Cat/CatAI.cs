@@ -350,6 +350,7 @@ namespace CatRaising.Cat
 
         /// <summary>
         /// Move the cat toward the current wander target.
+        /// Checks walkability each frame to prevent walking through furniture.
         /// </summary>
         private void MoveToTarget()
         {
@@ -371,7 +372,31 @@ namespace CatRaising.Cat
                 return;
             }
 
-            transform.position += direction * wanderSpeed * Time.deltaTime;
+            Vector3 nextPos = currentPos + direction * wanderSpeed * Time.deltaTime;
+
+            // Check if the next position is on a walkable tile
+            if (IsometricGrid.Instance != null)
+            {
+                if (!IsometricGrid.Instance.IsWorldPositionWalkable(nextPos))
+                {
+                    // Blocked by furniture — stop and idle
+                    _isMovingToTarget = false;
+                    _playerCalledCat = false;
+                    StartIdling();
+                    return;
+                }
+
+                // Also check if the target itself is still walkable (furniture may have been placed)
+                if (!IsometricGrid.Instance.IsWorldPositionWalkable(_wanderTarget))
+                {
+                    _isMovingToTarget = false;
+                    _playerCalledCat = false;
+                    StartIdling();
+                    return;
+                }
+            }
+
+            transform.position = nextPos;
 
             if (catController.CatAnimator != null)
             {

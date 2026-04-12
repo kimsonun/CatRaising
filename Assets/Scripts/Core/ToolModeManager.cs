@@ -52,7 +52,11 @@ namespace CatRaising.Core
         private void Start()
         {
             if (toggleButton != null)
-                toggleButton.onClick.AddListener(ToggleMode);
+                toggleButton.onClick.AddListener(() =>
+                {
+                    Systems.SoundEffectHooks.Instance?.PlayButtonClick();
+                    ToggleMode();
+                });
 
             UpdateIcon();
         }

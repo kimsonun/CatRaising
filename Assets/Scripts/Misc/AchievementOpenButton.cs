@@ -1,4 +1,5 @@
 using CatRaising.UI;
+using CatRaising.Systems;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,6 +10,10 @@ public class AchievementOpenButton : MonoBehaviour
 
     void Start()
     {
-        achievementButton.onClick.AddListener(() => achievementUI.OpenList());
+        achievementButton.onClick.AddListener(() =>
+        {
+            SoundEffectHooks.Instance?.PlayButtonClick();
+            achievementUI.OpenList();
+        });
     }
 }

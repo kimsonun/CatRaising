@@ -76,7 +76,7 @@ namespace CatRaising.UI
                     else if (isUnlocked)
                         texts[1].text = "Go";
                     else
-                        texts[1].text = $"🔒 {room.unlockCost} ";
+                        texts[1].text = $"{room.unlockCost} ";
                 }
 
                 var btn = slotObj.GetComponent<Button>();

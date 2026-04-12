@@ -82,14 +82,14 @@ namespace CatRaising.Interactables
                 new(-1, 0), new(1, 0), new(0, -1), new(0, 1),
                 new(-1, -1), new(1, 1), new(-1, 1), new(1, -1)
             };
-
+            /*
             foreach (var offset in offsets)
             {
                 Vector2Int adjacent = gridPosition + offset;
                 if (grid.IsTileWalkable(adjacent))
                     return grid.GridToWorld(adjacent);
             }
-
+            */
             return transform.position + Vector3.left * 0.5f;
         }
 
@@ -133,6 +133,10 @@ namespace CatRaising.Interactables
 
             if (fillEffectPrefab != null)
                 Instantiate(fillEffectPrefab, transform.position + Vector3.up * 0.5f, Quaternion.identity);
+
+            // Play meow sound when bowl is filled
+            if (SoundEffectHooks.Instance != null)
+                SoundEffectHooks.Instance.PlaySound("meow");
 
             Debug.Log("[WaterBowl] Bowl filled!");
         }

@@ -16,6 +16,7 @@ namespace CatRaising.UI
         [SerializeField] private TextMeshProUGUI popupTitle;
         [SerializeField] private TextMeshProUGUI popupDescription;
         [SerializeField] private TextMeshProUGUI popupReward;
+        [SerializeField] private TextMeshProUGUI bondRewardText;
         [SerializeField] private Button popupCloseButton;
 
         [Header("Achievement List Panel")]
@@ -59,12 +60,13 @@ namespace CatRaising.UI
         {
             if (popup == null) return;
 
-            if (popupTitle != null) popupTitle.text = $"🏆 {def.name}";
+            if (popupTitle != null) popupTitle.text = $"{def.name}";
             if (popupDescription != null) popupDescription.text = def.description;
 
             string reward = $"+{def.coinReward} ";
-            if (def.bondReward > 0) reward += $"  +{def.bondReward} bond";
+            string bondReward = def.bondReward > 0 ? $"  +{def.bondReward} bond" : "";
             if (popupReward != null) popupReward.text = reward;
+            if (bondReward != null) bondRewardText.text = bondReward;
 
             popup.SetActive(true);
         }
@@ -115,7 +117,7 @@ namespace CatRaising.UI
                     i++;
                     if (texts.Length >= 3)
                     {
-                        if (isClaimed) texts[2].text = "✅ Claimed";
+                        if (isClaimed) texts[2].text = "Claimed";
                         else if (isUnlocked) texts[2].text = $"+{def.coinReward} ";
                         else texts[2].text = $"{def.coinReward} ";
                     }

@@ -91,16 +91,16 @@ namespace CatRaising.Interactables
             // Check all adjacent tiles around the bowl footprint
             Vector2Int[] offsets = {
                 new(-1, 0), new(1, 0), new(0, -1), new(0, 1),
-                new(-1, -1), new(1, 1), new(-1, 1), new(1, -1)
+                new(-1, -1), new(1, 1), new(-1, 1), new(1, -1), new (0, 0)
             };
-
+            /*
             foreach (var offset in offsets)
             {
                 Vector2Int adjacent = gridPosition + offset;
                 if (grid.IsTileWalkable(adjacent))
                     return grid.GridToWorld(adjacent);
             }
-
+            */
             return transform.position + Vector3.left * 0.5f;
         }
 
@@ -158,6 +158,10 @@ namespace CatRaising.Interactables
             // Spawn fill effect
             if (fillEffectPrefab != null)
                 Instantiate(fillEffectPrefab, transform.position + Vector3.up * 0.5f, Quaternion.identity);
+
+            // Play meow sound when bowl is filled
+            if (Systems.SoundEffectHooks.Instance != null)
+                Systems.SoundEffectHooks.Instance.PlaySound("meow");
 
             Debug.Log("[FoodBowl] Bowl filled!");
         }

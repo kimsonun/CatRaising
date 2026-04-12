@@ -131,6 +131,8 @@ namespace CatRaising.MiniGame
             if (isGolden && AchievementManager.Instance != null)
                 AchievementManager.Instance.TryUnlock(AchievementId.GoldenCatch);
 
+            SoundEffectHooks.Instance.PlaySound("fish_minigame");
+
             // Spawn floating score text
             SpawnScorePopup();
 

@@ -1,4 +1,5 @@
 using CatRaising.MiniGame;
+using CatRaising.Systems;
 using CatRaising.UI;
 using UnityEngine;
 using UnityEngine.UI;
@@ -10,6 +11,10 @@ public class MiniGameButton : MonoBehaviour
 
     void Start()
     {
-        miniganeButton.onClick.AddListener(() => catFishingGameUI.Open());
+        miniganeButton.onClick.AddListener(() =>
+        {
+            SoundEffectHooks.Instance?.PlayButtonClick();
+            catFishingGameUI.Open();
+        });
     }
 }

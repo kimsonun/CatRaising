@@ -4,12 +4,9 @@ using System.Collections.Generic;
 namespace CatRaising.Systems
 {
     /// <summary>
-    /// Central audio manager for all sound effect hooks.
+    /// Central audio manager for all sound effects and background music.
     /// Attach to a GameObject in the scene and assign clips in the Inspector.
     /// Other scripts call SoundEffectHooks.Instance.PlaySound("pet") to trigger sounds.
-    /// 
-    /// No audio files are required yet — this provides the wiring so sounds can be
-    /// dropped in later without touching any other scripts.
     /// </summary>
     public class SoundEffectHooks : MonoBehaviour
     {
@@ -20,6 +17,8 @@ namespace CatRaising.Systems
         [SerializeField] private AudioSource sfxSource;
         [Tooltip("Secondary AudioSource for ambient/looping sounds (purring, rain)")]
         [SerializeField] private AudioSource ambientSource;
+        [Tooltip("AudioSource for background music")]
+        public AudioSource bgmSource;
 
         [Header("Cat Sounds")]
         [SerializeField] private AudioClip petSound;
@@ -36,12 +35,23 @@ namespace CatRaising.Systems
         [SerializeField] private AudioClip waterLap;
         [SerializeField] private AudioClip toyJingle;
         [SerializeField] private AudioClip pounceLand;
+        [SerializeField] private AudioClip woodPlaceSound;
+        [SerializeField] private AudioClip buySound;
 
         [Header("UI Sounds")]
         [SerializeField] private AudioClip buttonClick;
         [SerializeField] private AudioClip coinChime;
         [SerializeField] private AudioClip milestoneJingle;
         [SerializeField] private AudioClip pageFlip;
+        [SerializeField] private AudioClip fishMinigame;
+
+        [Header("Background Music — Normal")]
+        [Tooltip("Array of tracks to play randomly in the main game")]
+        [SerializeField] private AudioClip[] normalBGM;
+
+        [Header("Background Music — Mini-Game")]
+        [Tooltip("Array of tracks to play randomly during mini-game rounds")]
+        [SerializeField] private AudioClip[] miniGameBGM;
 
         [Header("Ambient")]
         [SerializeField] private AudioClip rainLoop;
@@ -49,14 +59,19 @@ namespace CatRaising.Systems
 
         [Header("Settings")]
         [Range(0f, 1f)]
-        [SerializeField] private float masterVolume = 1f;
+        public float masterVolume = 1f;
         [Range(0f, 1f)]
-        [SerializeField] private float sfxVolume = 1f;
+        public float sfxVolume = 1f;
         [Range(0f, 1f)]
         [SerializeField] private float ambientVolume = 0.6f;
+        [Range(0f, 1f)]
+        public float bgmVolume = 0.4f;
 
         // Clip lookup for string-based playback
         private Dictionary<string, AudioClip> _clipMap;
+        private int _lastNormalBGMIndex = -1;
+        private int _lastMiniGameBGMIndex = -1;
+        private bool _miniGameBGMActive = false;
 
         private void Awake()
         {
@@ -81,7 +96,32 @@ namespace CatRaising.Systems
                 ambientSource.loop = true;
             }
 
+            if (bgmSource == null)
+            {
+                bgmSource = gameObject.AddComponent<AudioSource>();
+                bgmSource.playOnAwake = false;
+                bgmSource.loop = false; // We handle looping manually via OnTrackEnd
+            }
+
             BuildClipMap();
+        }
+
+        private void Start()
+        {
+            // Start normal BGM on game load
+            PlayNormalBGM();
+        }
+
+        private void Update()
+        {
+            // Auto-advance BGM when current track finishes
+            if (bgmSource != null && !bgmSource.isPlaying && bgmSource.clip != null)
+            {
+                if (_miniGameBGMActive)
+                    PlayRandomMiniGameTrack();
+                else
+                    PlayNormalBGM();
+            }
         }
 
         /// <summary>
@@ -102,12 +142,17 @@ namespace CatRaising.Systems
                 { "drink",          waterLap },
                 { "toy",            toyJingle },
                 { "pounce",         pounceLand },
+                { "wood_place",     woodPlaceSound },
+                { "buy",            buySound },
                 { "button",         buttonClick },
                 { "coin",           coinChime },
                 { "milestone",      milestoneJingle },
                 { "page_flip",      pageFlip },
+                { "fish_minigame",  fishMinigame }
             };
         }
+
+        // ─── Sound Effects ─────────────────────────────────────
 
         /// <summary>
         /// Play a sound effect by name. Safe to call even if the clip is null (no-op).
@@ -135,6 +180,15 @@ namespace CatRaising.Systems
         }
 
         /// <summary>
+        /// Convenience: play the UI button click sound.
+        /// Call from any button listener: SoundEffectHooks.Instance?.PlayButtonClick()
+        /// </summary>
+        public void PlayButtonClick()
+        {
+            PlaySound("button");
+        }
+
+        /// <summary>
         /// Play a random meow variant.
         /// </summary>
         public void PlayRandomMeow(float volumeScale = 1f)
@@ -154,6 +208,8 @@ namespace CatRaising.Systems
                 sfxSource.pitch = 1f; // Reset after scheduling
             }
         }
+
+        // ─── Ambient Sounds ────────────────────────────────────
 
         /// <summary>
         /// Start looping an ambient sound (e.g., purring, rain).
@@ -188,6 +244,70 @@ namespace CatRaising.Systems
             ambientSource.Stop();
         }
 
+        // ─── Background Music ──────────────────────────────────
+
+        /// <summary>
+        /// Play a random normal BGM track. Loops through the array randomly.
+        /// </summary>
+        public void PlayNormalBGM()
+        {
+            if (normalBGM == null || normalBGM.Length == 0) return;
+
+            _miniGameBGMActive = false;
+            int index = GetRandomIndex(normalBGM.Length, ref _lastNormalBGMIndex);
+            PlayBGMTrack(normalBGM[index]);
+        }
+
+        /// <summary>
+        /// Start mini-game BGM (stops normal BGM). Call each time a new round starts.
+        /// </summary>
+        public void StartMiniGameBGM()
+        {
+            _miniGameBGMActive = true;
+            PlayRandomMiniGameTrack();
+        }
+
+        /// <summary>
+        /// Stop mini-game BGM and resume normal BGM.
+        /// </summary>
+        public void StopMiniGameBGM()
+        {
+            _miniGameBGMActive = false;
+            PlayNormalBGM();
+        }
+
+        private void PlayRandomMiniGameTrack()
+        {
+            if (miniGameBGM == null || miniGameBGM.Length == 0) return;
+
+            int index = GetRandomIndex(miniGameBGM.Length, ref _lastMiniGameBGMIndex);
+            PlayBGMTrack(miniGameBGM[index]);
+        }
+
+        private void PlayBGMTrack(AudioClip clip)
+        {
+            if (clip == null || bgmSource == null) return;
+
+            bgmSource.Stop();
+            bgmSource.clip = clip;
+            bgmSource.volume = bgmVolume * masterVolume;
+            bgmSource.Play();
+        }
+
+        /// <summary>
+        /// Pick a random index, avoiding the last one played (for variety).
+        /// </summary>
+        private int GetRandomIndex(int count, ref int lastIndex)
+        {
+            if (count <= 1) return 0;
+            int index;
+            do { index = Random.Range(0, count); } while (index == lastIndex);
+            lastIndex = index;
+            return index;
+        }
+
+        // ─── Volume Controls ───────────────────────────────────
+
         /// <summary>
         /// Update master volume (e.g., from settings UI).
         /// </summary>
@@ -195,6 +315,8 @@ namespace CatRaising.Systems
         {
             masterVolume = Mathf.Clamp01(volume);
             ambientSource.volume = ambientVolume * masterVolume;
+            if (bgmSource != null)
+                bgmSource.volume = bgmVolume * masterVolume;
         }
 
         /// <summary>
@@ -212,6 +334,16 @@ namespace CatRaising.Systems
         {
             ambientVolume = Mathf.Clamp01(volume);
             ambientSource.volume = ambientVolume * masterVolume;
+        }
+
+        /// <summary>
+        /// Update BGM volume.
+        /// </summary>
+        public void SetBGMVolume(float volume)
+        {
+            bgmVolume = Mathf.Clamp01(volume);
+            if (bgmSource != null)
+                bgmSource.volume = bgmVolume * masterVolume;
         }
     }
 }

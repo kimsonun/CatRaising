@@ -1,4 +1,5 @@
 using CatRaising.UI;
+using CatRaising.Systems;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,6 +10,10 @@ public class ShopOpenButton : MonoBehaviour
 
     void Start()
     {
-        shopButton.onClick.AddListener(() => shopUI.Open());
+        shopButton.onClick.AddListener(() =>
+        {
+            SoundEffectHooks.Instance?.PlayButtonClick();
+            shopUI.Open();
+        });
     }
 }
