@@ -49,10 +49,10 @@ namespace CatRaising.MiniGame
 
         private void Start()
         {
-            if (startButton != null) startButton.onClick.AddListener(OnStartClicked);
-            if (closeButton != null) closeButton.onClick.AddListener(Close);
-            if (playAgainButton != null) playAgainButton.onClick.AddListener(OnStartClicked);
-            if (exitButton != null) exitButton.onClick.AddListener(Close);
+            if (startButton != null) startButton.onClick.AddListener(() => { Systems.SoundEffectHooks.Instance?.PlayButtonClick(); OnStartClicked(); });
+            if (closeButton != null) closeButton.onClick.AddListener(() => { Systems.SoundEffectHooks.Instance?.PlayButtonClick(); Close(); });
+            if (playAgainButton != null) playAgainButton.onClick.AddListener(() => { Systems.SoundEffectHooks.Instance?.PlayButtonClick(); OnStartClicked(); });
+            if (exitButton != null) exitButton.onClick.AddListener(() => { Systems.SoundEffectHooks.Instance?.PlayButtonClick(); Close(); });
 
             if (miniGameManager == null) miniGameManager = MiniGameManager.Instance;
 

@@ -30,7 +30,7 @@ namespace CatRaising.UI
 
         private void Start()
         {
-            if (closeButton != null) closeButton.onClick.AddListener(Close);
+            if (closeButton != null) closeButton.onClick.AddListener(() => { Systems.SoundEffectHooks.Instance?.PlayButtonClick(); Close(); });
             if (selectionPanel != null) selectionPanel.SetActive(false);
         }
 

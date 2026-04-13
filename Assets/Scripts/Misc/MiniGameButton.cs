@@ -14,6 +14,7 @@ public class MiniGameButton : MonoBehaviour
         miniganeButton.onClick.AddListener(() =>
         {
             SoundEffectHooks.Instance?.PlayButtonClick();
+            TutorialHints.Instance?.OnActionPerformed("mini_game");
             catFishingGameUI.Open();
         });
     }

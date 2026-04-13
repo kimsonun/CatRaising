@@ -68,8 +68,8 @@ namespace CatRaising.Interactables
             UpdateSprite();
 
             // Register on isometric grid as occupied (cat walks near, not on)
-            if (IsometricGrid.Instance != null)
-                IsometricGrid.Instance.SetTilesOccupied(gridPosition, gridSize, true);
+            //if (IsometricGrid.Instance != null)
+            //    IsometricGrid.Instance.SetTilesOccupied(gridPosition, gridSize, true);
         }
 
         private void OnDestroy()
@@ -162,6 +162,10 @@ namespace CatRaising.Interactables
             // Play meow sound when bowl is filled
             if (Systems.SoundEffectHooks.Instance != null)
                 Systems.SoundEffectHooks.Instance.PlaySound("meow");
+
+            // Tutorial hook
+            if (UI.TutorialHints.Instance != null)
+                UI.TutorialHints.Instance.OnActionPerformed("feed");
 
             Debug.Log("[FoodBowl] Bowl filled!");
         }

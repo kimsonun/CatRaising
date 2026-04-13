@@ -35,8 +35,8 @@ namespace CatRaising.UI
             if (popup != null) popup.SetActive(false);
             if (listPanel != null) listPanel.SetActive(false);
 
-            if (popupCloseButton != null) popupCloseButton.onClick.AddListener(HidePopup);
-            if (listCloseButton != null) listCloseButton.onClick.AddListener(CloseList);
+            if (popupCloseButton != null) popupCloseButton.onClick.AddListener(() => { Systems.SoundEffectHooks.Instance?.PlayButtonClick(); HidePopup(); });
+            if (listCloseButton != null) listCloseButton.onClick.AddListener(() => {Systems.SoundEffectHooks.Instance?.PlayButtonClick() ; CloseList(); });
 
             if (AchievementManager.Instance != null)
             {
@@ -118,8 +118,8 @@ namespace CatRaising.UI
                     if (texts.Length >= 3)
                     {
                         if (isClaimed) texts[2].text = "Claimed";
-                        else if (isUnlocked) texts[2].text = $"+{def.coinReward} ";
-                        else texts[2].text = $"{def.coinReward} ";
+                        //if (isUnlocked) texts[3].text = $"+{def.coinReward} ";
+                        texts[3].text = $"+{def.coinReward} ";
                     }
 
                     // Claim button (4th child button, if present)

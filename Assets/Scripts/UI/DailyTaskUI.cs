@@ -42,7 +42,7 @@ namespace CatRaising.UI
         private void Start()
         {
             if (closeButton != null)
-                closeButton.onClick.AddListener(Close);
+                closeButton.onClick.AddListener(() => { Systems.SoundEffectHooks.Instance?.PlayButtonClick(); Close(); });
 
             if (panel != null) panel.SetActive(false);
 
@@ -52,7 +52,7 @@ namespace CatRaising.UI
                 if (slot.claimButton != null)
                 {
                     var capturedType = slot.taskType;
-                    slot.claimButton.onClick.AddListener(() => OnClaimClicked(capturedType));
+                    slot.claimButton.onClick.AddListener(() => { Systems.SoundEffectHooks.Instance?.PlayButtonClick(); OnClaimClicked(capturedType); });
                 }
             }
 

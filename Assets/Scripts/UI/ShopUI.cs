@@ -65,11 +65,11 @@ namespace CatRaising.UI
 
         private void Start()
         {
-            if (closeButton != null) closeButton.onClick.AddListener(Close);
-            if (tabRoomsButton != null) tabRoomsButton.onClick.AddListener(() => ShowTab(ShopCategory.Room));
-            if (tabFurnitureButton != null) tabFurnitureButton.onClick.AddListener(() => ShowTab(ShopCategory.Furniture));
-            if (confirmBuyButton != null) confirmBuyButton.onClick.AddListener(ConfirmPurchase);
-            if (confirmCancelButton != null) confirmCancelButton.onClick.AddListener(CancelPurchase);
+            if (closeButton != null) closeButton.onClick.AddListener(() => { Systems.SoundEffectHooks.Instance?.PlayButtonClick(); Close(); });
+            if (tabRoomsButton != null) tabRoomsButton.onClick.AddListener(() => { Systems.SoundEffectHooks.Instance?.PlayButtonClick(); ShowTab(ShopCategory.Room); });
+            if (tabFurnitureButton != null) tabFurnitureButton.onClick.AddListener(() => { Systems.SoundEffectHooks.Instance?.PlayButtonClick() ; ShowTab(ShopCategory.Furniture); });
+            if (confirmBuyButton != null) confirmBuyButton.onClick.AddListener(() => { Systems.SoundEffectHooks.Instance?.PlayButtonClick(); ConfirmPurchase(); });
+            if (confirmCancelButton != null) confirmCancelButton.onClick.AddListener(() => { Systems.SoundEffectHooks.Instance?.PlayButtonClick(); CancelPurchase(); });
 
             if (shopPanel != null) shopPanel.SetActive(false);
             if (confirmDialog != null) confirmDialog.SetActive(false);

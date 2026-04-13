@@ -16,6 +16,7 @@ public class RoomOpenButton : MonoBehaviour
         roomButton.onClick.AddListener(() =>
         {
             SoundEffectHooks.Instance?.PlayButtonClick();
+            TutorialHints.Instance?.OnActionPerformed("room_switch");
             roomUI.Open();
             shopUI.Close();
             furniturePlacementUI.Close();

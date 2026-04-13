@@ -18,6 +18,7 @@ namespace CatRaising.UI
         [SerializeField] private Button menuButton;
         [SerializeField] private Button settingsButton;
         [SerializeField] private Button closeSettingsButton;
+        [SerializeField] private Button guideButton;
         
         [SerializeField] private GameObject settingsPanel;
         [Header("Scene")]
@@ -46,14 +47,22 @@ namespace CatRaising.UI
                 });
 
             if (closeSettingsButton != null)
-                closeSettingsButton.onClick.AddListener(OnCloseSettings);
+                closeSettingsButton.onClick.AddListener(() =>
+                {
+                    Systems.SoundEffectHooks.Instance?.PlayButtonClick();
+                    OnCloseSettings();
+                });
 
 
             if (confirmYesButton != null)
-                confirmYesButton.onClick.AddListener(OnConfirmYes);
+                confirmYesButton.onClick.AddListener(() =>
+                {
+                    Systems.SoundEffectHooks.Instance?.PlayButtonClick();
+                    OnConfirmYes();
+                });
 
             if (confirmNoButton != null)
-                confirmNoButton.onClick.AddListener(OnConfirmNo);
+                confirmNoButton.onClick.AddListener(() => { Systems.SoundEffectHooks.Instance?.PlayButtonClick(); OnConfirmNo(); });
 
             if (confirmDialog != null)
                 confirmDialog.SetActive(false);

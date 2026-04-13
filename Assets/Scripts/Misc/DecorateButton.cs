@@ -15,6 +15,7 @@ public class DecorateButton : MonoBehaviour
         decorateButton.onClick.AddListener(() =>
         {
             SoundEffectHooks.Instance?.PlayButtonClick();
+            TutorialHints.Instance?.OnActionPerformed("furniture");
             furniturePlacementUI.Open();
             shopUI.Close();
             roomSwitcherUI.Close();

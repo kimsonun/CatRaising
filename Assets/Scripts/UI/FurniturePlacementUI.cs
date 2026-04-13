@@ -88,11 +88,11 @@ namespace CatRaising.UI
 
         private void Start()
         {
-            if (closeButton != null) closeButton.onClick.AddListener(Close);
-            if (confirmButton != null) confirmButton.onClick.AddListener(ConfirmPlacement);
-            if (cancelButton != null) cancelButton.onClick.AddListener(CancelPlacement);
-            if (removeButton != null) removeButton.onClick.AddListener(RemoveSelectedFurniture);
-            if (flipButton != null) flipButton.onClick.AddListener(FlipGhost);
+            if (closeButton != null) closeButton.onClick.AddListener(() => { Systems.SoundEffectHooks.Instance?.PlayButtonClick(); Close(); });
+            if (confirmButton != null) confirmButton.onClick.AddListener(() => { Systems.SoundEffectHooks.Instance?.PlayButtonClick(); ConfirmPlacement(); });
+            if (cancelButton != null) cancelButton.onClick.AddListener(() => { Systems.SoundEffectHooks.Instance?.PlayButtonClick(); CancelPlacement(); });
+            if (removeButton != null) removeButton.onClick.AddListener(() => { Systems.SoundEffectHooks.Instance?.PlayButtonClick(); RemoveSelectedFurniture(); });
+            if (flipButton != null) flipButton.onClick.AddListener(() => { Systems.SoundEffectHooks.Instance?.PlayButtonClick(); FlipGhost(); });
 
             if (placementPanel != null) placementPanel.SetActive(false);
             HidePlacementButtons();

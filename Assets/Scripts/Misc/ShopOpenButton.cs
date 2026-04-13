@@ -13,6 +13,7 @@ public class ShopOpenButton : MonoBehaviour
         shopButton.onClick.AddListener(() =>
         {
             SoundEffectHooks.Instance?.PlayButtonClick();
+            TutorialHints.Instance?.OnActionPerformed("shop");
             shopUI.Open();
         });
     }

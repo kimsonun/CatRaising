@@ -13,6 +13,7 @@ public class AchievementOpenButton : MonoBehaviour
         achievementButton.onClick.AddListener(() =>
         {
             SoundEffectHooks.Instance?.PlayButtonClick();
+            TutorialHints.Instance?.OnActionPerformed("achievement");
             achievementUI.OpenList();
         });
     }

@@ -138,6 +138,10 @@ namespace CatRaising.Interactables
             if (SoundEffectHooks.Instance != null)
                 SoundEffectHooks.Instance.PlaySound("meow");
 
+            // Tutorial hook
+            if (UI.TutorialHints.Instance != null)
+                UI.TutorialHints.Instance.OnActionPerformed("water");
+
             Debug.Log("[WaterBowl] Bowl filled!");
         }
 

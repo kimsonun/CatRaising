@@ -89,6 +89,13 @@ namespace CatRaising.Data
         // ─── Milestone 3: Mini-Game ─────────────────────────────
         public int bestFishingScore = 0;
 
+        // ─── Tutorial ───────────────────────────────────────────
+        /// <summary>
+        /// Tracks the last completed tutorial step index.
+        /// -1 = tutorial not started, 0-8 = step completed, 9+ = tutorial finished.
+        /// </summary>
+        public int tutorialStepCompleted = -1;
+
         // ─── Helpers ────────────────────────────────────────────
 
         public DateTime GetLastPlayedTime()

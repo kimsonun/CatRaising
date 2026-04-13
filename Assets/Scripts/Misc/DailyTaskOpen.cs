@@ -13,6 +13,7 @@ public class DailyTaskOpen : MonoBehaviour
         dailyTaskButton.onClick.AddListener(() =>
         {
             SoundEffectHooks.Instance?.PlayButtonClick();
+            TutorialHints.Instance?.OnActionPerformed("daily_task");
             dailyTaskUI.Open();
         });
     }
