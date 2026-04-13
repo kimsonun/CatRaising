@@ -67,6 +67,8 @@ namespace CatRaising.UI
             string bondReward = def.bondReward > 0 ? $"  +{def.bondReward} bond" : "";
             if (popupReward != null) popupReward.text = reward;
             if (bondReward != null) bondRewardText.text = bondReward;
+            if (def.bondReward == 0) bondRewardText.gameObject.SetActive(false);
+             else bondRewardText.gameObject.SetActive(true);
 
             popup.SetActive(true);
         }
