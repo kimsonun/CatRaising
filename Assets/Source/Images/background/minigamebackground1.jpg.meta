@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: c2756a676c654fd428a4152389aa7bd7
+guid: 767f7be03dd760e4d9b0e007a10ec6cb
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -9143439396368522720
-    second: StockCake-Sunlit_Ocean_Depths-1955080-standard_0
+      213: 5642469942899819967
+    second: StockCake-Serene_Underwater_Pixels-2097335-standard_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -126,13 +126,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: StockCake-Sunlit_Ocean_Depths-1955080-standard_0
+      name: StockCake-Serene_Underwater_Pixels-2097335-standard_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 768
-        height: 1344
+        width: 1344
+        height: 768
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -141,8 +141,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 0226422205afb1180800000000000000
-      internalID: -9143439396368522720
+      spriteID: fb5cc5a94841e4e40800000000000000
+      internalID: 5642469942899819967
       vertices: []
       indices: 
       edges: []
@@ -161,7 +161,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      StockCake-Sunlit_Ocean_Depths-1955080-standard_0: -9143439396368522720
+      StockCake-Serene_Underwater_Pixels-2097335-standard_0: 5642469942899819967
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
