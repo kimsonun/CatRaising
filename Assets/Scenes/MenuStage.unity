@@ -589,6 +589,59 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!1 &311031890
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 311031892}
+  - component: {fileID: 311031891}
+  m_Layer: 0
+  m_Name: CursorManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &311031891
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 311031890}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 096c8d222b4e6384a8bd7dfebc2cf788, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CatRaising.Systems.CustomCursorManager
+  triangleCursorFrames:
+  - {fileID: 2800000, guid: 0f0a66cd38ae7dd4d8f85d28c6c7eb44, type: 3}
+  - {fileID: 2800000, guid: df53218993f651d4c884f9a0c3713067, type: 3}
+  - {fileID: 2800000, guid: 6dcad60d72cc55e43b8fc04fea07db94, type: 3}
+  triangleHotspot: {x: 0, y: 0}
+  handCursor: {fileID: 2800000, guid: 3666900ca9845994c94710b3f072747d, type: 3}
+  handHotspot: {x: 8, y: 4}
+  catObject: {fileID: 0}
+  clickFrameDuration: 0.05
+--- !u!4 &311031892
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 311031890}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &507211983
 GameObject:
   m_ObjectHideFlags: 0
@@ -3512,11 +3565,13 @@ MonoBehaviour:
   milestoneJingle: {fileID: 0}
   pageFlip: {fileID: 0}
   fishMinigame: {fileID: 0}
+  secretUnlock: {fileID: 0}
   normalBGM:
   - {fileID: 8300000, guid: 78b2137202500954e89fc15f7888a2b2, type: 3}
   - {fileID: 8300000, guid: a2b066f027855f640b57c5bd59f36dcb, type: 3}
   - {fileID: 8300000, guid: d7a0e5bb6fb16c0418a0ba940d4787ca, type: 3}
   miniGameBGM: []
+  secretBGM: []
   rainLoop: {fileID: 0}
   fireCrackle: {fileID: 0}
   masterVolume: 1
@@ -3546,3 +3601,4 @@ SceneRoots:
   - {fileID: 230574226}
   - {fileID: 1798789087}
   - {fileID: 2141856903}
+  - {fileID: 311031892}
