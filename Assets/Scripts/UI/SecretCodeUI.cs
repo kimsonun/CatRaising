@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using CatRaising.Systems;
@@ -29,6 +29,7 @@ namespace CatRaising.UI
         [SerializeField] private Button submitButton;
 
         [Header("Secret Message Panel")]
+        [SerializeField] private GameObject inputField;
         [SerializeField] private GameObject messagePanel;
         [SerializeField] private TextMeshProUGUI messageTitleText;
         [SerializeField] private TextMeshProUGUI messageBodyText;
@@ -80,7 +81,12 @@ namespace CatRaising.UI
 
             // Close button
             if (closeMessageButton != null)
-                closeMessageButton.onClick.AddListener(CloseMessage);
+                closeMessageButton.onClick.AddListener(() => { 
+                    inputField.SetActive(false);
+                    SoundEffectHooks.Instance?.StopSecretBGM();
+                    Systems.SoundEffectHooks.Instance?.PlayButtonClick(); 
+                    CloseMessage(); 
+                });
         }
 
         /// <summary>
@@ -115,7 +121,9 @@ namespace CatRaising.UI
 
             // Play a special sound
             if (SoundEffectHooks.Instance != null)
-                SoundEffectHooks.Instance.PlaySound("meow");
+                SoundEffectHooks.Instance.PlaySound("secret_unlock");
+
+            SoundEffectHooks.Instance?.StartSecretBGM();
 
             // Show the secret message panel
             ShowMessage();

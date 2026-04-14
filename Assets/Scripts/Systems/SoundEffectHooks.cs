@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections.Generic;
 
 namespace CatRaising.Systems
@@ -44,6 +44,7 @@ namespace CatRaising.Systems
         [SerializeField] private AudioClip milestoneJingle;
         [SerializeField] private AudioClip pageFlip;
         [SerializeField] private AudioClip fishMinigame;
+        [SerializeField] private AudioClip secretUnlock;
 
         [Header("Background Music — Normal")]
         [Tooltip("Array of tracks to play randomly in the main game")]
@@ -52,6 +53,10 @@ namespace CatRaising.Systems
         [Header("Background Music — Mini-Game")]
         [Tooltip("Array of tracks to play randomly during mini-game rounds")]
         [SerializeField] private AudioClip[] miniGameBGM;
+
+        [Header("Background Music — Secret")]
+        [Tooltip("Tracks to play when the secret code is entered")]
+        [SerializeField] private AudioClip[] secretBGM;
 
         [Header("Ambient")]
         [SerializeField] private AudioClip rainLoop;
@@ -72,6 +77,8 @@ namespace CatRaising.Systems
         private int _lastNormalBGMIndex = -1;
         private int _lastMiniGameBGMIndex = -1;
         private bool _miniGameBGMActive = false;
+        private int _lastSecretBGMIndex = -1;
+        private bool _secretBGMActive = false;
 
         private void Awake()
         {
@@ -119,6 +126,8 @@ namespace CatRaising.Systems
             {
                 if (_miniGameBGMActive)
                     PlayRandomMiniGameTrack();
+                else if (_secretBGMActive)      // <-- add this
+                    PlayRandomSecretTrack();
                 else
                     PlayNormalBGM();
             }
@@ -148,7 +157,8 @@ namespace CatRaising.Systems
                 { "coin",           coinChime },
                 { "milestone",      milestoneJingle },
                 { "page_flip",      pageFlip },
-                { "fish_minigame",  fishMinigame }
+                { "fish_minigame",  fishMinigame },
+                { "secret_unlock", secretUnlock }
             };
         }
 
@@ -292,6 +302,33 @@ namespace CatRaising.Systems
             bgmSource.clip = clip;
             bgmSource.volume = bgmVolume * masterVolume;
             bgmSource.Play();
+        }
+
+        /// <summary>
+        /// Start secret BGM. Call when the secret code is correctly entered.
+        /// </summary>
+        public void StartSecretBGM()
+        {
+            _miniGameBGMActive = false;
+            _secretBGMActive = true;
+            PlayRandomSecretTrack();
+        }
+
+        /// <summary>
+        /// Stop secret BGM and resume normal BGM.
+        /// </summary>
+        public void StopSecretBGM()
+        {
+            _secretBGMActive = false;
+            PlayNormalBGM();
+        }
+
+        private void PlayRandomSecretTrack()
+        {
+            if (secretBGM == null || secretBGM.Length == 0) return;
+
+            int index = GetRandomIndex(secretBGM.Length, ref _lastSecretBGMIndex);
+            PlayBGMTrack(secretBGM[index]);
         }
 
         /// <summary>

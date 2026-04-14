@@ -413,8 +413,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 50
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: af9ad964a1b2dbe4d852c2abc90894eb, type: 2}
-  m_sharedMaterial: {fileID: 1804295085556415208, guid: af9ad964a1b2dbe4d852c2abc90894eb, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 4284fe63f29eede4fa4a85be52f50901, type: 2}
+  m_sharedMaterial: {fileID: 3383153871528983161, guid: 4284fe63f29eede4fa4a85be52f50901, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -550,8 +550,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: Blue scratch pole  sssss
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: af9ad964a1b2dbe4d852c2abc90894eb, type: 2}
-  m_sharedMaterial: {fileID: 1804295085556415208, guid: af9ad964a1b2dbe4d852c2abc90894eb, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 4284fe63f29eede4fa4a85be52f50901, type: 2}
+  m_sharedMaterial: {fileID: 3383153871528983161, guid: 4284fe63f29eede4fa4a85be52f50901, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
