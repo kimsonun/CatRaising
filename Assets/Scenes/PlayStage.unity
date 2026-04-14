@@ -15058,6 +15058,8 @@ MonoBehaviour:
   globalLight: {fileID: 1404174271}
   backgroundRenderer: {fileID: 1692357204}
   ambientOverlay: {fileID: 0}
+  gameMinutesPerRealSecond: 7
+  startingHour: 7
   transitionSpeed: 0.5
   morningIntensity: 0.9
   afternoonIntensity: 1
