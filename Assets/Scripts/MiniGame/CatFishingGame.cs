@@ -95,9 +95,19 @@ namespace CatRaising.MiniGame
             if (gamePanel != null) gamePanel.SetActive(true);
             if (gameOverPanel != null) gameOverPanel.SetActive(false);
 
+            // Reset all UI to pre-game state
             if (scoreText != null) scoreText.text = "Score: 0";
-            if (timerText != null) timerText.text = $"{miniGameManager?.GameDuration ?? 30:F0}s";
-            if (instructionText != null) instructionText.text = "Tap fish to catch them!\nGolden fish = 3× points!";
+            if (timerText != null)
+            {
+                timerText.text = $"{miniGameManager?.GameDuration ?? 30:F0}s";
+                timerText.color = Color.white;
+            }
+            if (instructionText != null)
+            {
+                instructionText.gameObject.SetActive(true);
+                instructionText.text = "Tap fish to catch them!\nGolden fish = 3× points!";
+            }
+            if (instructionPanel != null) instructionPanel.SetActive(true);
             if (startButton != null) startButton.gameObject.SetActive(true);
 
             // Switch to mini-game BGM
